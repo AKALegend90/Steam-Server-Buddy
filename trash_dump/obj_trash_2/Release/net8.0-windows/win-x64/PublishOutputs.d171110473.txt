@@ -1,0 +1,7 @@
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\bin\Release\net8.0-windows\win-x64\publish\SteamServerBuddy.pdb
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\bin\Release\net8.0-windows\win-x64\publish\configs\1604030.json
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\bin\Release\net8.0-windows\win-x64\publish\configs\2278520.json
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\bin\Release\net8.0-windows\win-x64\publish\configs\2394010.json
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\bin\Release\net8.0-windows\win-x64\publish\manifests\user_paths.json
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\bin\Release\net8.0-windows\win-x64\publish\manifests\valheim.json
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\bin\Release\net8.0-windows\win-x64\publish\SteamServerBuddy.exe

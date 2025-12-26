@@ -1,0 +1,73 @@
+dotnet : Unhandled exception. System.W
+indows.Markup.XamlParseException: 
+'Set property 'System.Windows.Resource
+Dictionary.Source' threw an 
+exception.' Line number '10' and line 
+position '18'.
+At line:1 char:1
++ dotnet run > crash_log.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpec 
+   ified: (Unhandled excep... positi  
+  on '18'.:String) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorId : NativeC 
+   ommandError
+ 
+ ---> System.IO.IOException: Cannot 
+locate resource 'themes/materialdesign
+theme.defaults.xaml'.
+   at MS.Internal.AppModel.ResourcePar
+t.GetStreamCore(FileMode mode, 
+FileAccess access)
+   at System.IO.Packaging.PackagePart.
+GetStream(FileMode mode, FileAccess 
+access)
+   at MS.Internal.IO.Packaging.Package
+PartExtensions.GetSeekableStream(Packa
+gePart packPart, FileMode mode, 
+FileAccess access)
+   at System.IO.Packaging.PackWebRespo
+nse.CachedResponse.GetResponseStream()
+   at System.IO.Packaging.PackWebRespo
+nse.get_ContentType()
+   at MS.Internal.WpfWebRequestHelper.
+GetContentType(WebResponse response)
+   at MS.Internal.WpfWebRequestHelper.
+GetResponseStream(WebRequest request, 
+ContentType& contentType)
+   at System.Windows.ResourceDictionar
+y.set_Source(Uri value)
+   at MS.Internal.Xaml.Runtime.ClrObje
+ctRuntime.SetValue(Object inst, 
+XamlMember property, Object value)
+   --- End of inner exception stack 
+trace ---
+   at System.Windows.Markup.XamlReader
+.RewrapException(Exception e, 
+IXamlLineInfo lineInfo, Uri baseUri)
+   at System.Windows.Markup.WpfXamlLoa
+der.Load(XamlReader xamlReader, 
+IXamlObjectWriterFactory 
+writerFactory, Boolean 
+skipJournaledProperties, Object 
+rootObject, XamlObjectWriterSettings 
+settings, Uri baseUri)
+   at System.Windows.Markup.WpfXamlLoa
+der.LoadBaml(XamlReader xamlReader, 
+Boolean skipJournaledProperties, 
+Object rootObject, XamlAccessLevel 
+accessLevel, Uri baseUri)
+   at System.Windows.Markup.XamlReader
+.LoadBaml(Stream stream, 
+ParserContext parserContext, Object 
+parent, Boolean closeStream)
+   at System.Windows.Application.LoadC
+omponent(Object component, Uri 
+resourceLocator)
+   at SteamServerBuddy.App.InitializeC
+omponent() in 
+C:\Users\xyooj\Documents\VS code 
+project folder\SteamServerBuddyCS\Stea
+mServerBuddy\App.xaml:line 1
+   at SteamServerBuddy.App.Main()

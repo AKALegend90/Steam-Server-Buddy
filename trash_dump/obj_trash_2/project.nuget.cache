@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "dgSpecHash": "lFg63ITzrTc=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\xyooj\\Documents\\VS code project folder\\SteamServerBuddyCS\\SteamServerBuddy\\SteamServerBuddy.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\xyooj\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.0\\communitytoolkit.mvvm.8.4.0.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\materialdesigncolors\\5.3.0\\materialdesigncolors.5.3.0.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\materialdesignthemes\\5.3.0\\materialdesignthemes.5.3.0.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\microsoft.win32.systemevents\\10.0.1\\microsoft.win32.systemevents.10.0.1.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\microsoft.xaml.behaviors.wpf\\1.1.77\\microsoft.xaml.behaviors.wpf.1.1.77.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\newtonsoft.json\\13.0.4\\newtonsoft.json.13.0.4.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\system.codedom\\10.0.1\\system.codedom.10.0.1.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\system.drawing.common\\10.0.1\\system.drawing.common.10.0.1.nupkg.sha512",
+    "C:\\Users\\xyooj\\.nuget\\packages\\system.management\\10.0.1\\system.management.10.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

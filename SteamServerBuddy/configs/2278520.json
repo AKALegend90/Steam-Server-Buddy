@@ -1,0 +1,362 @@
+{
+    "appid": "2278520",
+    "name": "Enshrouded Dedicated Server",
+    "config_files": [
+        {
+            "name": "enshrouded_server.json",
+            "path": "enshrouded_server.json",
+            "format": "json",
+            "description": "Main server configuration for Enshrouded",
+            "fields": [
+                {
+                    "key": "name",
+                    "label": "Server Name",
+                    "type": "text",
+                    "default": "My Enshrouded Server",
+                    "description": "Display name of the server"
+                },
+                {
+                    "key": "password",
+                    "label": "Server Password",
+                    "type": "text",
+                    "default": "",
+                    "description": "Password required to join the server (leave empty for no password)"
+                },
+                {
+                    "key": "saveDirectory",
+                    "label": "Save Directory",
+                    "type": "text",
+                    "default": "./savegame",
+                    "description": "Directory where world saves are stored"
+                },
+                {
+                    "key": "logDirectory",
+                    "label": "Log Directory",
+                    "type": "text",
+                    "default": "./logs",
+                    "description": "Directory where server logs are stored"
+                },
+                {
+                    "key": "ip",
+                    "label": "Server IP",
+                    "type": "text",
+                    "default": "0.0.0.0",
+                    "description": "IP address the server binds to (0.0.0.0 for all interfaces)"
+                },
+                {
+                    "key": "gamePort",
+                    "label": "Game Port",
+                    "type": "number",
+                    "min": 1024,
+                    "max": 65535,
+                    "step": 1,
+                    "default": 15636,
+                    "description": "Port for game connections"
+                },
+                {
+                    "key": "queryPort",
+                    "label": "Query Port",
+                    "type": "number",
+                    "min": 1024,
+                    "max": 65535,
+                    "step": 1,
+                    "default": 15637,
+                    "description": "Port for server queries"
+                },
+                {
+                    "key": "slotCount",
+                    "label": "Max Players",
+                    "type": "number",
+                    "min": 1,
+                    "max": 16,
+                    "step": 1,
+                    "default": 16,
+                    "description": "Maximum number of players allowed on the server"
+                },
+                {
+                    "key": "gameSettingsPreset",
+                    "label": "Difficulty Preset",
+                    "type": "select",
+                    "options": [
+                        "Default",
+                        "Relaxed",
+                        "Hard",
+                        "Survival",
+                        "Custom"
+                    ],
+                    "default": "Default",
+                    "description": "Game difficulty preset (Custom unlocks detailed settings)"
+                },
+                {
+                    "key": "playerHealthFactor",
+                    "label": "Player Health Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for player health"
+                },
+                {
+                    "key": "playerManaFactor",
+                    "label": "Player Mana Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for player mana"
+                },
+                {
+                    "key": "playerStaminaFactor",
+                    "label": "Player Stamina Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for player stamina"
+                },
+                {
+                    "key": "enableDurability",
+                    "label": "Enable Durability",
+                    "type": "toggle",
+                    "default": true,
+                    "description": "Whether equipment durability is enabled"
+                },
+                {
+                    "key": "enableStarvingDebuff",
+                    "label": "Enable Starving Debuff",
+                    "type": "toggle",
+                    "default": false,
+                    "description": "Whether players receive a debuff when starving"
+                },
+                {
+                    "key": "foodBuffDurationFactor",
+                    "label": "Food Buff Duration",
+                    "type": "number",
+                    "min": 0.5,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for food buff duration"
+                },
+                {
+                    "key": "fromHungerToStarving",
+                    "label": "Hunger to Starving Time",
+                    "type": "number",
+                    "min": 5,
+                    "max": 60,
+                    "step": 5,
+                    "default": 10,
+                    "description": "Time in minutes from hunger to starving"
+                },
+                {
+                    "key": "shroudTimeFactor",
+                    "label": "Shroud Time Multiplier",
+                    "type": "number",
+                    "min": 0.5,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for time spent in the Shroud"
+                },
+                {
+                    "key": "tombstoneMode",
+                    "label": "Tombstone Mode",
+                    "type": "select",
+                    "options": [
+                        "AddBackpackMaterials",
+                        "Everything",
+                        "NoTombstone"
+                    ],
+                    "default": "AddBackpackMaterials",
+                    "description": "What happens to items on death"
+                },
+                {
+                    "key": "miningDamageFactor",
+                    "label": "Mining Damage Multiplier",
+                    "type": "number",
+                    "min": 0.5,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for mining damage"
+                },
+                {
+                    "key": "plantGrowthSpeedFactor",
+                    "label": "Plant Growth Speed",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for plant growth speed"
+                },
+                {
+                    "key": "resourceDropStackAmountFactor",
+                    "label": "Resource Drop Amount",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for resource drop amounts"
+                },
+                {
+                    "key": "factoryProductionSpeedFactor",
+                    "label": "Factory Production Speed",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for factory production speed"
+                },
+                {
+                    "key": "perkUpgradeRecyclingFactor",
+                    "label": "Perk Upgrade Recycling",
+                    "type": "number",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.1,
+                    "default": 0.0,
+                    "description": "Percentage of materials returned when recycling perk upgrades"
+                },
+                {
+                    "key": "perkCostFactor",
+                    "label": "Perk Cost Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for perk costs"
+                },
+                {
+                    "key": "randomSpawnerAmount",
+                    "label": "Random Spawner Amount",
+                    "type": "select",
+                    "options": [
+                        "Few",
+                        "Normal",
+                        "Many",
+                        "Extreme"
+                    ],
+                    "default": "Normal",
+                    "description": "Amount of random spawners in the world"
+                },
+                {
+                    "key": "aggroPoolAmount",
+                    "label": "Enemy Aggro Pool",
+                    "type": "select",
+                    "options": [
+                        "Few",
+                        "Normal",
+                        "Many",
+                        "Extreme"
+                    ],
+                    "default": "Normal",
+                    "description": "Size of enemy aggro pools"
+                },
+                {
+                    "key": "enemyDamageFactor",
+                    "label": "Enemy Damage Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for damage dealt by enemies"
+                },
+                {
+                    "key": "enemyHealthFactor",
+                    "label": "Enemy Health Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for enemy health"
+                },
+                {
+                    "key": "enemyStaminaFactor",
+                    "label": "Enemy Stamina Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for enemy stamina"
+                },
+                {
+                    "key": "enemyPerceptionRangeFactor",
+                    "label": "Enemy Perception Range",
+                    "type": "number",
+                    "min": 0.5,
+                    "max": 2.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for enemy perception range"
+                },
+                {
+                    "key": "bossDamageFactor",
+                    "label": "Boss Damage Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for damage dealt by bosses"
+                },
+                {
+                    "key": "bossHealthFactor",
+                    "label": "Boss Health Multiplier",
+                    "type": "number",
+                    "min": 0.25,
+                    "max": 4.0,
+                    "step": 0.25,
+                    "default": 1.0,
+                    "description": "Multiplier for boss health"
+                },
+                {
+                    "key": "threatBonus",
+                    "label": "Threat Bonus",
+                    "type": "number",
+                    "min": 0.0,
+                    "max": 2.0,
+                    "step": 0.1,
+                    "default": 1.0,
+                    "description": "Bonus multiplier for threat generation"
+                },
+                {
+                    "key": "pacifyAllEnemies",
+                    "label": "Pacify All Enemies",
+                    "type": "toggle",
+                    "default": false,
+                    "description": "Makes all enemies passive (for building/exploring)"
+                },
+                {
+                    "key": "dayTimeDuration",
+                    "label": "Day Duration",
+                    "type": "number",
+                    "min": 5,
+                    "max": 60,
+                    "step": 5,
+                    "default": 30,
+                    "description": "Duration of daytime in minutes"
+                },
+                {
+                    "key": "nightTimeDuration",
+                    "label": "Night Duration",
+                    "type": "number",
+                    "min": 5,
+                    "max": 60,
+                    "step": 5,
+                    "default": 12,
+                    "description": "Duration of nighttime in minutes"
+                }
+            ]
+        }
+    ]
+}
