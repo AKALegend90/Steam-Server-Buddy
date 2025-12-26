@@ -36,6 +36,11 @@
 3.  **Run**: Click "Start" to launch your server.
 4.  **Configure**: Use the "Settings" button to enable Auto-Restart, Backups, or Discord Webhooks.
 
+## 🐛 Known Issues & Feedback
+As this is the first release (v1.0.0), you might encounter some bugs or unexpected behavior.
+
+If you find an issue, please feel free to report it in the **[Issues](../../issues)** tab. Your feedback is incredibly helpful and will help improve future versions!
+
 ## 🤝 Support
 
 Created by **[AKALegend90](https://github.com/AKALegend90)**.
