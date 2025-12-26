@@ -1,0 +1,164 @@
+dotnet : Unhandled exception. System.W
+indows.Markup.XamlParseException: 
+'Provide value on 'System.Windows.Stat
+icResourceExtension' threw an 
+exception.' Line number '58' and line 
+position '66'.
+At line:1 char:1
++ dotnet run > crash_log_7.txt 2>&1; 
+Get-Content crash_log_7.txt -Encod ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpec 
+   ified: (Unhandled excep... positi  
+  on '66'.:String) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorId : NativeC 
+   ommandError
+ 
+ ---> System.Exception: Cannot find 
+resource named 
+'MaterialDesignFilledButton'. 
+Resource names are case sensitive.
+   at System.Windows.StaticResourceExt
+ension.ProvideValueInternal(IServicePr
+ovider serviceProvider, Boolean 
+allowDeferredReference)
+   at MS.Internal.Xaml.Runtime.ClrObje
+ctRuntime.CallProvideValue(MarkupExten
+sion me, IServiceProvider 
+serviceProvider)
+   --- End of inner exception stack 
+trace ---
+   at System.Windows.Markup.XamlReader
+.RewrapException(Exception e, 
+IXamlLineInfo lineInfo, Uri baseUri)
+   at System.Windows.Markup.XamlReader
+.RewrapException(Exception e, Uri 
+baseUri)
+   at System.Windows.FrameworkTemplate
+.LoadTemplateXaml(XamlReader 
+templateReader, XamlObjectWriter 
+currentWriter)
+   at System.Windows.FrameworkTemplate
+.LoadOptimizedTemplateContent(Dependen
+cyObject container, 
+IComponentConnector 
+componentConnector, IStyleConnector 
+styleConnector, List`1 
+affectedChildren, UncommonField`1 
+templatedNonFeChildrenField)
+   at System.Windows.FrameworkTemplate
+.LoadContent(DependencyObject 
+container, List`1 affectedChildren)
+   at System.Windows.StyleHelper.Apply
+TemplateContent(UncommonField`1 
+dataField, DependencyObject 
+container, FrameworkElementFactory 
+templateRoot, Int32 lastChildIndex, 
+HybridDictionary 
+childIndexFromChildID, 
+FrameworkTemplate frameworkTemplate)
+   at System.Windows.FrameworkTemplate
+.ApplyTemplateContent(UncommonField`1 
+templateDataField, FrameworkElement 
+container)
+   at System.Windows.FrameworkElement.
+ApplyTemplate()
+   at System.Windows.FrameworkElement.
+MeasureCore(Size availableSize)
+   at 
+System.Windows.UIElement.Measure(Size 
+availableSize)
+   at System.Windows.ContextLayoutMana
+ger.UpdateLayout()
+   at System.Windows.Interop.HwndSourc
+e.SetLayoutSize()
+   at System.Windows.Interop.HwndSourc
+e.set_RootVisualInternal(Visual value)
+   at System.Windows.Window.SetRootVis
+ualAndUpdateSTC()
+   at System.Windows.Window.SetupIniti
+alState(Double requestedTop, Double 
+requestedLeft, Double requestedWidth, 
+Double requestedHeight)
+   at System.Windows.Window.CreateSour
+ceWindow(Boolean duringShow)
+   at System.Windows.Window.ShowHelper
+(Object booleanBox)
+   at System.Windows.Window.Show()
+   at SteamServerBuddy.App.OnStartup(S
+tartupEventArgs e) in 
+C:\Users\xyooj\Documents\VS code 
+project folder\SteamServerBuddyCS\Stea
+mServerBuddy\App.xaml.cs:line 18
+   at System.Windows.Application.<.cto
+r>b__1_0(Object unused)
+   at System.Windows.Threading.Excepti
+onWrapper.InternalRealCall(Delegate 
+callback, Object args, Int32 numArgs)
+   at System.Windows.Threading.Excepti
+onWrapper.TryCatchWhen(Object source, 
+Delegate callback, Object args, Int32 
+numArgs, Delegate catchHandler)
+   at System.Windows.Threading.Dispatc
+herOperation.InvokeImpl()
+   at MS.Internal.CulturePreservingExe
+cutionContext.CallbackWrapper(Object 
+obj)
+   at System.Threading.ExecutionContex
+t.RunInternal(ExecutionContext 
+executionContext, ContextCallback 
+callback, Object state)
+--- End of stack trace from previous 
+location ---
+   at System.Threading.ExecutionContex
+t.RunInternal(ExecutionContext 
+executionContext, ContextCallback 
+callback, Object state)
+   at MS.Internal.CulturePreservingExe
+cutionContext.Run(CulturePreservingExe
+cutionContext executionContext, 
+ContextCallback callback, Object 
+state)
+   at System.Windows.Threading.Dispatc
+herOperation.Invoke()
+   at System.Windows.Threading.Dispatc
+her.ProcessQueue()
+   at System.Windows.Threading.Dispatc
+her.WndProcHook(IntPtr hwnd, Int32 
+msg, IntPtr wParam, IntPtr lParam, 
+Boolean& handled)
+   at 
+MS.Win32.HwndWrapper.WndProc(IntPtr 
+hwnd, Int32 msg, IntPtr wParam, 
+IntPtr lParam, Boolean& handled)
+   at MS.Win32.HwndSubclass.Dispatcher
+CallbackOperation(Object o)
+   at System.Windows.Threading.Excepti
+onWrapper.InternalRealCall(Delegate 
+callback, Object args, Int32 numArgs)
+   at System.Windows.Threading.Excepti
+onWrapper.TryCatchWhen(Object source, 
+Delegate callback, Object args, Int32 
+numArgs, Delegate catchHandler)
+   at System.Windows.Threading.Dispatc
+her.LegacyInvokeImpl(DispatcherPriorit
+y priority, TimeSpan timeout, 
+Delegate method, Object args, Int32 
+numArgs)
+   at System.Windows.Threading.Dispatc
+her.Invoke(DispatcherPriority 
+priority, Delegate method, Object arg)
+   at MS.Win32.HwndSubclass.SubclassWn
+dProc(IntPtr hwnd, Int32 msg, IntPtr 
+wParam, IntPtr lParam)
+   at MS.Win32.UnsafeNativeMethods.Dis
+patchMessage(MSG& msg)
+   at System.Windows.Threading.Dispatc
+her.PushFrameImpl(DispatcherFrame 
+frame)
+   at System.Windows.Application.RunDi
+spatcher(Object ignore)
+   at System.Windows.Application.RunIn
+ternal(Window window)
+   at SteamServerBuddy.App.Main()

@@ -1,0 +1,148 @@
+﻿<Application x:Class="SteamServerBuddy.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SteamServerBuddy"
+             xmlns:conv="clr-namespace:SteamServerBuddy.Converters"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+     <Application.Resources>
+        <ResourceDictionary xmlns:vm="clr-namespace:SteamServerBuddy.ViewModels"
+                            xmlns:v="clr-namespace:SteamServerBuddy.Views">
+            <ResourceDictionary.MergedDictionaries>
+                <materialDesign:BundledTheme BaseTheme="Dark" PrimaryColor="Blue" SecondaryColor="Cyan" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <conv:BooleanInverter x:Key="BooleanInverter"/>
+            <conv:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+            <conv:DoubleToIsIndeterminateConverter x:Key="DoubleToIsIndeterminateConverter"/>
+            <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+            <conv:ThresholdColorConverter x:Key="ThresholdColorConverter"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+            <!-- DataTemplates for ViewModels -->
+            <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+                <v:DashboardView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ServersViewModel}">
+                <v:ServersView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ServerGalleryViewModel}">
+                <v:ServerGalleryView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:AddServerViewModel}">
+                <v:AddServerView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:AppSettingsViewModel}">
+                <v:AppSettingsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <v:SettingsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ConsoleViewModel}">
+                <v:ConsoleView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ServerDetailViewModel}">
+                <v:ServerDetailView />
+            </DataTemplate>
+
+            <!-- Custom ON/OFF Toggle Button Style -->
+            <Style x:Key="OnOffToggleButton" TargetType="ToggleButton">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Grid>
+                                <Border x:Name="Background" 
+                                        Background="#E53E3E" 
+                                        CornerRadius="20" 
+                                        Width="80" Height="40"
+                                        BorderThickness="0">
+                                    <Grid>
+                                        <!-- OFF Text -->
+                                        <TextBlock x:Name="OffText" 
+                                                   Text="OFF" 
+                                                   Foreground="White" 
+                                                   FontWeight="Bold" 
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center" 
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,0,10,0"/>
+                                        <!-- ON Text -->
+                                        <TextBlock x:Name="OnText" 
+                                                   Text="ON" 
+                                                   Foreground="White" 
+                                                   FontWeight="Bold" 
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center" 
+                                                   HorizontalAlignment="Left"
+                                                   Margin="10,0,0,0"
+                                                   Visibility="Collapsed"/>
+                                        <!-- Circular Knob -->
+                                        <Ellipse x:Name="Knob" 
+                                                 Fill="White" 
+                                                 Width="32" Height="32"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="4,0,0,0">
+                                            <Ellipse.Effect>
+                                                <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.3"/>
+                                            </Ellipse.Effect>
+                                        </Ellipse>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Background" Property="Background" Value="#48BB78"/>
+                                    <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter TargetName="Knob" Property="Margin" Value="0,0,4,0"/>
+                                    <Setter TargetName="OnText" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="OffText" Property="Visibility" Value="Collapsed"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Background" Property="Opacity" Value="0.9"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Cursor" Value="Hand"/>
+            </Style>
+
+            <!-- Custom Circular Back Button Style -->
+            <Style x:Key="CircularBackButton" TargetType="Button">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Ellipse x:Name="Circle" 
+                                         Width="50" Height="50"
+                                         Stroke="White" 
+                                         StrokeThickness="2"
+                                         Fill="Transparent"/>
+                                <Path x:Name="Arrow"
+                                      Data="M 30,25 L 18,25 M 18,25 L 24,19 M 18,25 L 24,31"
+                                      Stroke="White"
+                                      StrokeThickness="2.5"
+                                      StrokeLineJoin="Round"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Circle" Property="Fill" Value="#20FFFFFF"/>
+                                    <Setter TargetName="Circle" Property="Stroke" Value="#4299E1"/>
+                                    <Setter TargetName="Arrow" Property="Stroke" Value="#4299E1"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Circle" Property="Fill" Value="#40FFFFFF"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Cursor" Value="Hand"/>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

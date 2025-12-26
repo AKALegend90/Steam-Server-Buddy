@@ -1,0 +1,17 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\obj\Debug\net8.0-windows\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs(4,12): error CS0579: Duplicate 'global::System.Runtime.Versioning.TargetFrameworkAttribute' attribute [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\Services\NotificationService.cs(13,99): warning CS8625: Cannot convert null literal to non-nullable reference type. [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\Services\ConfigService.cs(85,89): warning CS8625: Cannot convert null literal to non-nullable reference type. [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\Services\SystemMonitorService.cs(90,119): warning CS8625: Cannot convert null literal to non-nullable reference type. [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+
+Build FAILED.
+
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\Services\NotificationService.cs(13,99): warning CS8625: Cannot convert null literal to non-nullable reference type. [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\Services\ConfigService.cs(85,89): warning CS8625: Cannot convert null literal to non-nullable reference type. [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\Services\SystemMonitorService.cs(90,119): warning CS8625: Cannot convert null literal to non-nullable reference type. [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\obj\Debug\net8.0-windows\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs(4,12): error CS0579: Duplicate 'global::System.Runtime.Versioning.TargetFrameworkAttribute' attribute [C:\Users\xyooj\Documents\VS code project folder\SteamServerBuddyCS\SteamServerBuddy\SteamServerBuddy_yn25ou50_wpftmp.csproj]
+    3 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.15
