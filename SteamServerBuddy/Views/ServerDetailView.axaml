@@ -1,0 +1,205 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+             x:Class="SteamServerBuddy.Views.ServerDetailView">
+    <ScrollViewer>
+        <StackPanel Margin="20" Spacing="18">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Content="Back" Command="{Binding GoBackCommand}" Padding="14,8" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                    <TextBlock Text="{Binding ServerName}" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock Text="{Binding AppId, StringFormat='App ID: {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                    <TextBlock Text="{Binding InstallPath}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Content="{Binding StartStopButtonContent}"
+                        Command="{Binding StartStopServerCommand}"
+                        Background="{Binding StartStopButtonBackground}"
+                        Padding="20,10"
+                        VerticalAlignment="Center"/>
+            </Grid>
+
+            <TextBlock Text="{Binding DetailStatus}" Foreground="{DynamicResource AppInfoTextBrush}" FontSize="13" TextWrapping="Wrap"/>
+
+            <Border Padding="14" CornerRadius="6" Background="{DynamicResource AppPanelAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" MaxHeight="220">
+                <Grid RowDefinitions="Auto,*">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Live Console" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                        <Button Grid.Column="1" Content="Clear" Command="{Binding ConsoleVM.ClearCommand}" Padding="10,6"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,8,0,0">
+                        <TextBox Text="{Binding ConsoleVM.LogContent}"
+                                 AcceptsReturn="True"
+                                 IsReadOnly="True"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 Background="Transparent"
+                                 Foreground="{DynamicResource AppConsoleTextBrush}"
+                                 BorderThickness="0"
+                                 TextWrapping="NoWrap"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <UniformGrid Columns="3">
+                <Border Margin="0,0,10,10" Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Runtime" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                        <TextBlock Text="{Binding CpuUsage, StringFormat='CPU: {0}'}" Foreground="{DynamicResource AppTextBrush}"/>
+                        <TextBlock Text="{Binding MemoryUsage, StringFormat='Memory: {0}'}" Foreground="{DynamicResource AppTextBrush}"/>
+                        <TextBlock Text="{Binding ServerPort, StringFormat='Server port: {0}'}" Foreground="{DynamicResource AppTextBrush}"/>
+                        <TextBlock Text="{Binding IsInstalled, StringFormat='Installed: {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,0,10,10" Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Maintenance" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                        <Button Content="Open Folder" Command="{Binding OpenServerFolderCommand}" Padding="12,7"/>
+                        <Button Content="Update / Validate" Command="{Binding UpdateServerCommand}" Padding="12,7"/>
+                        <Button Content="Remove Server Files" Command="{Binding UninstallServerCommand}" Padding="12,7"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,0,0,10" Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Install Progress" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                        <ProgressBar Value="{Binding InstallProgress}" Maximum="100" Height="8"/>
+                        <TextBlock Text="{Binding InstallStatus}" Foreground="{DynamicResource AppSubtleTextBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Automation" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <UniformGrid Columns="2">
+                        <CheckBox Content="Auto restart after crash" IsChecked="{Binding AutoRestart}" Margin="0,0,12,8"/>
+                        <CheckBox Content="Auto update" IsChecked="{Binding AutoUpdateEnabled}" Margin="0,0,12,8"/>
+                        <CheckBox Content="Auto backup" IsChecked="{Binding AutoBackupEnabled}" Margin="0,0,12,8"/>
+                        <CheckBox Content="Scheduled restart" IsChecked="{Binding ScheduledRestartEnabled}" Margin="0,0,12,8"/>
+                    </UniformGrid>
+
+                    <Grid ColumnDefinitions="*,Auto,*,*,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Text="Port" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                        <TextBlock Grid.Column="2" Text="Update time" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                        <TextBlock Grid.Column="3" Text="Backup interval hours" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                        <TextBlock Grid.Column="4" Text="Restart interval hours" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+
+                        <NumericUpDown Grid.Row="1" Value="{Binding ServerPort}" Minimum="0" Maximum="65535" Margin="0,6,12,0"/>
+                        <Button Grid.Row="1"
+                                Grid.Column="1"
+                                Content="Detect Port"
+                                Command="{Binding DetectServerPortCommand}"
+                                Padding="12,7"
+                                Margin="0,6,12,0"/>
+                        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding AutoUpdateSchedule}" Margin="0,6,12,0"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="3" Value="{Binding AutoBackupInterval}" Minimum="1" Maximum="720" Margin="0,6,12,0"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding ScheduledRestartInterval}" Minimum="1" Maximum="720" Margin="0,6,0,0"/>
+                    </Grid>
+
+                    <TextBlock Text="Forward this port manually in your router and Windows Firewall if friends outside your network need to connect." Foreground="{DynamicResource AppSubtleTextBrush}" TextWrapping="Wrap"/>
+
+                    <TextBlock Text="Launch arguments" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                    <TextBox Text="{Binding LaunchArguments}" Watermark="-batchmode -nographics or game-specific flags"/>
+
+                    <Button Content="Save Automation Settings"
+                            Command="{Binding SaveAutomationSettingsCommand}"
+                            Padding="16,9"
+                            HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <StackPanel>
+                            <TextBlock Text="Server Settings Files" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock Text="{Binding SettingsVM.StatusMessage}" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="12"/>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Content="Open Folder"
+                                Command="{Binding SettingsVM.OpenSettingsFolderCommand}"
+                                Padding="12,7"
+                                Margin="0,0,8,0"/>
+                        <Button Grid.Column="2"
+                                Content="Save Settings"
+                                Command="{Binding SettingsVM.SaveCommand}"
+                                Padding="12,7"/>
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding SettingsVM.Groups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12" CornerRadius="4" Background="{DynamicResource AppCardAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" Margin="0,0,0,10">
+                                    <StackPanel Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto,Auto">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding FileName}" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding FullPath}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="11" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1"
+                                                    Content="Show File"
+                                                    Command="{Binding DataContext.SettingsVM.OpenFileLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="10,6"
+                                                    Margin="8,0,0,0"/>
+                                            <Button Grid.Column="2"
+                                                    Content="Edit Raw"
+                                                    Command="{Binding DataContext.SettingsVM.OpenInNotepadCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="10,6"
+                                                    Margin="8,0,0,0"/>
+                                        </Grid>
+
+                                        <ItemsControl ItemsSource="{Binding Fields}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto" Margin="0,0,0,8">
+                                                        <TextBlock Text="{Binding Label}" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value"/>
+                                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Description}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="11" TextWrapping="Wrap"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <TextBlock Text="Backups" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                        <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadBackupsCommand}" Padding="12,7" Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" Content="Create Backup" Command="{Binding CreateBackupCommand}" Padding="12,7"/>
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding Backups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10" CornerRadius="4" Background="{DynamicResource AppCardAltBrush}" Margin="0,0,0,8">
+                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding FullPath}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="11" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="Open" Command="{Binding DataContext.OpenBackupFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="8,0,0,0"/>
+                                        <Button Grid.Column="2" Content="Restore" Command="{Binding DataContext.RestoreBackupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="8,0,0,0"/>
+                                        <Button Grid.Column="3" Content="Delete" Command="{Binding DataContext.DeleteBackupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

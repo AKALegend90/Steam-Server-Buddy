@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Management;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
@@ -24,10 +25,13 @@ namespace SteamServerBuddy.Services
         {
             try
             {
-                _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-                _ramCounter = new PerformanceCounter("Memory", "Available MBytes");
-                // First call returns 0, need to prime
-                _cpuCounter.NextValue();
+                if (OperatingSystem.IsWindows())
+                {
+                    _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                    _ramCounter = new PerformanceCounter("Memory", "Available MBytes");
+                    // First call returns 0, need to prime
+                    _cpuCounter.NextValue();
+                }
             }
             catch
             {
@@ -61,7 +65,11 @@ namespace SteamServerBuddy.Services
         {
             try
             {
-                return _cpuCounter?.NextValue() ?? 0;
+                if (OperatingSystem.IsWindows())
+                {
+                    return _cpuCounter?.NextValue() ?? 0;
+                }
+                return 0;
             }
             catch { return 0; }
         }
@@ -70,18 +78,26 @@ namespace SteamServerBuddy.Services
         {
             try
             {
-                double availableMB = _ramCounter?.NextValue() ?? 0;
-                
-                // Get total RAM via WMI
-                using var searcher = new ManagementObjectSearcher("SELECT TotalVisibleMemorySize FROM Win32_OperatingSystem");
-                foreach (ManagementObject obj in searcher.Get())
+                if (OperatingSystem.IsWindows())
                 {
-                    double totalKB = Convert.ToDouble(obj["TotalVisibleMemorySize"]);
-                    double totalGB = totalKB / 1024 / 1024;
-                    double usedGB = totalGB - (availableMB / 1024);
-                    double percent = (usedGB / totalGB) * 100;
-                    return (Math.Round(usedGB, 1), Math.Round(totalGB, 1), Math.Round(percent, 1));
+                    double availableMB = _ramCounter?.NextValue() ?? 0;
+                
+                    // Get total RAM via WMI
+                    if (OperatingSystem.IsWindows())
+                    {
+                        using var searcher = new ManagementObjectSearcher("SELECT TotalVisibleMemorySize FROM Win32_OperatingSystem");
+                        foreach (ManagementObject obj in searcher.Get())
+                        {
+                            double totalKB = Convert.ToDouble(obj["TotalVisibleMemorySize"]);
+                            double totalGB = totalKB / 1024 / 1024;
+                            double usedGB = totalGB - (availableMB / 1024);
+                            double percent = (usedGB / totalGB) * 100;
+                            return (Math.Round(usedGB, 1), Math.Round(totalGB, 1), Math.Round(percent, 1));
+                        }
+                    }
                 }
+                // TODO: Linux implementation
+                return (0, 0, 0);
             }
             catch { }
             return (0, 0, 0);

@@ -42,7 +42,7 @@ namespace SteamServerBuddy.ViewModels
                 if (_buffer.Length > 100000) _buffer.Remove(0, 20000);
                 
                 // Update on UI thread
-                App.Current.Dispatcher.Invoke(() => 
+                Avalonia.Threading.Dispatcher.UIThread.Invoke(() => 
                 {
                     LogContent = _buffer.ToString();
                 });

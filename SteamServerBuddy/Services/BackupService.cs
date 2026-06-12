@@ -58,28 +58,6 @@ namespace SteamServerBuddy.Services
                 // Strategy: List all top-level files/folders, exclude "Backups", and zip them carefully
                 // Or easier: Zip to a temp location, then move to Backups folder.
                 
-                var tempZipPath = Path.GetTempFileName();
-                File.Delete(tempZipPath); // Ensure it doesn't exist so ZipFile can create it, but get a valid temp path name
-                tempZipPath += ".zip";
-
-                try 
-                {
-                   ZipFile.CreateFromDirectory(installPath, tempZipPath, CompressionLevel.Optimal, false);
-                }
-                catch (IOException)
-                {
-                    // If files are locked, we might fail. 
-                    // Ideally server should be stopped before calling this.
-                    throw new Exception("Could not create backup. Ensure the server is STOPPED before backing up.");
-                }
-
-                // Problem: This includes the 'Backups' folder itself recursively if we are not careful!
-                // ZipFile.CreateFromDirectory will try to zip the destination if it's inside source.
-                
-                // BETTER STRATEGY: 
-                // 1. Enumerate files to zip (excluding Backups folder)
-                // 2. Add to zip archive manually
-                
                 using (var archive = ZipFile.Open(zipFilePath, ZipArchiveMode.Create))
                 {
                     var rootDir = new DirectoryInfo(installPath);
@@ -87,14 +65,33 @@ namespace SteamServerBuddy.Services
                     {
                         // Exclude the Backups folder content
                         if (file.FullName.Contains(Path.Combine(installPath, BACKUP_DIR_NAME))) continue;
+                        if (file.Extension.Equals(".tmp", StringComparison.OrdinalIgnoreCase)) continue;
                         
                         // Exclude lock files or logs if needed? For now keep logs.
 
                         var relPath = Path.GetRelativePath(installPath, file.FullName);
-                        archive.CreateEntryFromFile(file.FullName, relPath);
+                        try
+                        {
+                            archive.CreateEntryFromFile(file.FullName, relPath);
+                        }
+                        catch (IOException ex)
+                        {
+                            Globals.Diagnostics.Warn($"Skipped locked file during backup: {file.FullName} ({ex.Message})");
+                        }
                     }
                 }
             });
+        }
+
+        public async Task PruneBackupsAsync(string installPath, int keepCount)
+        {
+            if (keepCount <= 0) return;
+
+            var backups = await GetBackupsAsync(installPath);
+            foreach (var backup in backups.Skip(keepCount))
+            {
+                await DeleteBackupAsync(backup.FullPath);
+            }
         }
 
         public async Task<List<BackupInfo>> GetBackupsAsync(string installPath)

@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+             x:Class="SteamServerBuddy.Views.AddServerView">
+    <ScrollViewer>
+        <StackPanel Margin="20" Spacing="18">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock Text="Add by Steam AppID" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock Text="Look up Steam art, tags, links, and install commands before adding the server" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="14"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="Open SteamDB" Command="{Binding OpenSteamDbCommand}" Padding="16,9" VerticalAlignment="Center"/>
+            </Grid>
+
+            <Border Padding="18" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <Grid ColumnDefinitions="170,*,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+                    <TextBlock Text="Steam AppID" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                    <TextBlock Grid.Column="1" Text="Server name" Foreground="{DynamicResource AppSubtleTextBrush}" Margin="12,0,0,0"/>
+
+                    <TextBox Grid.Row="1" Text="{Binding AppId}" Watermark="Example: 2394010" Margin="0,8,0,0"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ServerName}" Watermark="Auto-fills after lookup" Margin="12,8,0,0"/>
+                    <Button Grid.Row="1" Grid.Column="2" Content="Lookup" Command="{Binding LookupCommand}" IsEnabled="{Binding !IsBusy}" Padding="14,8" Margin="12,8,0,0"/>
+                    <Button Grid.Row="1" Grid.Column="3" Content="Install" Command="{Binding InstallCommand}" IsEnabled="{Binding !IsBusy}" Padding="14,8" Background="#35D07F" Margin="8,8,0,0"/>
+
+                    <TextBlock Grid.Row="2" Grid.ColumnSpan="4" Text="Install folder" Foreground="{DynamicResource AppSubtleTextBrush}" Margin="0,14,0,0"/>
+                    <Grid Grid.Row="3" Grid.ColumnSpan="4" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                        <TextBox Text="{Binding InstallFolder}" Watermark="Choose where this server will be installed"/>
+                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseInstallFolderCommand}" Margin="8,0,0,0" Padding="14,8"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource AppInfoTextBrush}" FontSize="14" TextWrapping="Wrap"/>
+
+            <Grid ColumnDefinitions="380,*" IsVisible="{Binding HasMetadata}">
+                <Border Padding="0" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" ClipToBounds="True">
+                    <Grid RowDefinitions="180,Auto,*">
+                        <Image Source="{Binding HeaderImage}" Stretch="UniformToFill" Height="180"/>
+                        <StackPanel Grid.Row="1" Margin="16,10,16,6">
+                            <TextBlock Text="{Binding AppId, StringFormat='Steam app {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                            <TextBlock Text="{Binding ServerName}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource AppTextBrush}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SteamType}" Foreground="{DynamicResource AppMutedTextBrush}"/>
+                        </StackPanel>
+                        <ItemsControl Grid.Row="2" ItemsSource="{Binding Tags}" Margin="16,0,16,16">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="9,5" Margin="0,0,6,6" CornerRadius="12" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" Background="{DynamicResource AppCardAltBrush}">
+                                        <TextBlock Text="{Binding}" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="12"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="14" Margin="18,0,0,0">
+                    <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="SteamCMD" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox Text="{Binding SteamCmdCommand}" IsReadOnly="True" FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap" MinWidth="720"/>
+                            </ScrollViewer>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Install" Command="{Binding InstallCommand}" IsEnabled="{Binding !IsBusy}" Padding="14,8" Background="#35D07F"/>
+                                <Button Content="Copy command" Command="{Binding CopyCommandCommand}" Padding="14,8"/>
+                                <Button Content="SteamDB" Command="{Binding OpenSteamDbCommand}" Padding="14,8"/>
+                                <Button Content="Steam store" Command="{Binding OpenSteamStoreCommand}" Padding="14,8"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Install folder" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                            <TextBox Text="{Binding InstallFolder}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <Border Padding="14" CornerRadius="6" Background="{DynamicResource AppPanelAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" MinHeight="170">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Text="Installation Log" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}" Margin="0,0,0,10"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding InstallLog}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="12" Foreground="{DynamicResource AppConsoleTextBrush}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Border Padding="18" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Import Existing Server" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock Text="Server folder" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                    <Grid ColumnDefinitions="*,Auto" MaxWidth="620" HorizontalAlignment="Left">
+                        <TextBox Text="{Binding ImportPath}" Watermark="Choose a server install folder"/>
+                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseCommand}" Margin="8,0,0,0" Padding="14,8"/>
+                    </Grid>
+                    <Button Content="Import Folder"
+                            Command="{Binding ImportCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            Padding="16,9"
+                            HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+             x:Class="SteamServerBuddy.Views.ServerCatalogView">
+    <Grid RowDefinitions="Auto,Auto,*" Margin="20">
+        <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+                <TextBlock Text="Server Catalog" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource AppTextBrush}"/>
+                <TextBlock Text="Search Steam dedicated server apps and install without opening SteamDB." Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="14"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Refresh Catalog" Command="{Binding RefreshCommand}" IsEnabled="{Binding !IsLoading}" Padding="16,9" VerticalAlignment="Center"/>
+        </Grid>
+
+        <Border Grid.Row="1" Margin="0,18,0,14" Padding="16" CornerRadius="6" Background="{DynamicResource AppPanelBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                <TextBox Text="{Binding SearchText}" Watermark="Search by name or AppID, e.g. Palworld, Valheim, 2394010"/>
+                <TextBlock Grid.Column="1" Text="{Binding ResultCount, StringFormat='{}{0} results'}" Foreground="{DynamicResource AppSubtleTextBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding StatusMessage}" Foreground="{DynamicResource AppInfoTextBrush}" Margin="0,10,0,0" TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Padding="0" CornerRadius="6" Background="{DynamicResource AppPanelBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="14" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,0,0,1">
+                                <Grid ColumnDefinitions="*,120,Auto">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource AppTextBrush}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding AppId, StringFormat='Steam AppID: {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="12"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding Source}" Foreground="{DynamicResource AppMutedTextBrush}" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="2" Content="Install" Command="{Binding InstallCommand}" Padding="14,8" Background="#1E7BFF"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

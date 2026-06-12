@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+             x:Class="SteamServerBuddy.Views.AppSettingsView">
+    <ScrollViewer>
+        <StackPanel Margin="20" Spacing="22" MaxWidth="760">
+            <StackPanel>
+                <TextBlock Text="Settings" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource AppTextBrush}"/>
+                <TextBlock Text="Default folders, theme, and notification preferences" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="14"/>
+            </StackPanel>
+
+            <Border Padding="18" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Theme" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <ComboBox ItemsSource="{Binding ThemeOptions}"
+                              SelectedItem="{Binding Theme}"
+                              Width="180"
+                              HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="18" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Server Install Path" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Text="{Binding ServerInstallPath}" Watermark="Default server install folder"/>
+                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseFolderCommand}" Margin="8,0,0,0" Padding="14,8"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="18" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Discord Alerts" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <CheckBox Content="Enable Discord alerts" IsChecked="{Binding EnableDiscordAlerts}"/>
+                    <TextBox Text="{Binding DiscordWebhookUrl}" Watermark="Discord webhook URL"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Save" Command="{Binding SaveWebhookCommand}" Padding="16,9"/>
+                        <Button Content="Test" Command="{Binding TestDiscordCommand}" Padding="16,9"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="18" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Diagnostics" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                    <Button Content="Open App Log" Command="{Binding OpenDiagnosticsLogCommand}" Padding="16,9" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource AppInfoTextBrush}" FontSize="14" TextWrapping="Wrap"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

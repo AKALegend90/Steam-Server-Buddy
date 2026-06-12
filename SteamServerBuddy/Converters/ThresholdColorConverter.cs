@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
-using System.Windows.Data;
-using System.Windows.Media;
+using Avalonia.Data.Converters;
+using Avalonia.Media;
 
 namespace SteamServerBuddy.Converters
 {
@@ -16,19 +16,19 @@ namespace SteamServerBuddy.Converters
             if (value is double percent)
             {
                 if (percent < 70)
-                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#48BB78")); // Green
+                    return SolidColorBrush.Parse("#48BB78"); // Green
                 if (percent < 85)
-                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ECC94B")); // Yellow
-                return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E53E3E")); // Red
+                    return SolidColorBrush.Parse("#ECC94B"); // Yellow
+                return SolidColorBrush.Parse("#E53E3E"); // Red
             }
             
             if (value is float floatPercent)
             {
                 if (floatPercent < 70)
-                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#48BB78"));
+                    return SolidColorBrush.Parse("#48BB78");
                 if (floatPercent < 85)
-                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ECC94B"));
-                return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E53E3E"));
+                    return SolidColorBrush.Parse("#ECC94B");
+                return SolidColorBrush.Parse("#E53E3E");
             }
 
             return new SolidColorBrush(Colors.Gray);

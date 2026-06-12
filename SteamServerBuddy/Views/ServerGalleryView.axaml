@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+             x:Class="SteamServerBuddy.Views.ServerGalleryView">
+    <Grid RowDefinitions="Auto,*" Margin="20">
+        <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+                <TextBlock Text="Servers" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource AppTextBrush}"/>
+                <TextBlock Text="Installed and imported dedicated servers" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="14"/>
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Content="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    Padding="18,8"
+                    VerticalAlignment="Center"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Margin="0,22,0,0">
+            <ItemsControl ItemsSource="{Binding Servers}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="300"
+                                MinHeight="290"
+                                Margin="0,0,14,14"
+                                CornerRadius="6"
+                                Background="{DynamicResource AppCardBrush}"
+                                BorderBrush="{DynamicResource AppBorderBrush}"
+                                BorderThickness="1"
+                                ClipToBounds="True">
+                            <Grid RowDefinitions="140,*,Auto">
+                                <Image Source="{Binding ImageSource}" Stretch="UniformToFill" Height="140"/>
+                                <StackPanel Grid.Row="1" Spacing="6" Margin="14,12,14,8">
+                                    <TextBlock Text="{Binding AppId, StringFormat='Steam app {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding Name}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding SteamType}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="12"/>
+                                    <ItemsControl ItemsSource="{Binding Tags}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="7,3" Margin="0,0,5,5" CornerRadius="10" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" Background="{DynamicResource AppCardAltBrush}">
+                                                    <TextBlock Text="{Binding}" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="11"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{Binding InstallPath}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="11" TextWrapping="Wrap" MaxHeight="36"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="14,0,14,14">
+                                    <Button Content="Details" Command="{Binding OpenDetailCommand}" Padding="12,7"/>
+                                    <Button Content="Folder" Command="{Binding OpenFolderCommand}" Padding="12,7"/>
+                                    <Button Content="Remove" Command="{Binding UninstallCommand}" Padding="12,7"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding StatusMessage}"
+                                           Foreground="#F6AD55"
+                                           FontSize="11"
+                                           Margin="14,42,14,0"
+                                           TextWrapping="Wrap"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

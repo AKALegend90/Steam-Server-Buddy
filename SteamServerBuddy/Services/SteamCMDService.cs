@@ -9,7 +9,8 @@ namespace SteamServerBuddy.Services
 {
     public class SteamCMDService
     {
-        private const string SteamCmdUrl = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip";
+        private const string SteamCmdUrlWindows = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip";
+        private const string SteamCmdUrlLinux = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz";
         private readonly string _baseDir;
         private readonly string _steamCmdExe;
 
@@ -17,8 +18,17 @@ namespace SteamServerBuddy.Services
 
         public SteamCMDService()
         {
-            _baseDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "steamcmd");
-            _steamCmdExe = Path.Combine(_baseDir, "steamcmd.exe");
+            AppPaths.EnsureDataDirectories();
+            _baseDir = AppPaths.SteamCmdDir;
+            
+            if (OperatingSystem.IsWindows())
+            {
+                _steamCmdExe = Path.Combine(_baseDir, "steamcmd.exe");
+            }
+            else
+            {
+                _steamCmdExe = Path.Combine(_baseDir, "steamcmd.sh");
+            }
         }
 
         public string GetSteamCMDPath() => _steamCmdExe;
@@ -56,15 +66,42 @@ namespace SteamServerBuddy.Services
             statusCallback?.Invoke("Downloading SteamCMD...");
             Directory.CreateDirectory(_baseDir);
 
-            using (var client = new HttpClient())
+            if (OperatingSystem.IsWindows())
             {
-                var bytes = await client.GetByteArrayAsync(SteamCmdUrl);
-                var zipPath = Path.Combine(_baseDir, "steamcmd.zip");
-                await File.WriteAllBytesAsync(zipPath, bytes);
+                using (var client = new HttpClient())
+                {
+                    var bytes = await client.GetByteArrayAsync(SteamCmdUrlWindows);
+                    var zipPath = Path.Combine(_baseDir, "steamcmd.zip");
+                    await File.WriteAllBytesAsync(zipPath, bytes);
 
-                statusCallback?.Invoke("Extracting SteamCMD...");
-                ZipFile.ExtractToDirectory(zipPath, _baseDir, true);
-                File.Delete(zipPath);
+                    statusCallback?.Invoke("Extracting SteamCMD...");
+                    ZipFile.ExtractToDirectory(zipPath, _baseDir, true);
+                    File.Delete(zipPath);
+                }
+            }
+            else
+            {
+                using (var client = new HttpClient())
+                {
+                    var bytes = await client.GetByteArrayAsync(SteamCmdUrlLinux);
+                    var tarPath = Path.Combine(_baseDir, "steamcmd_linux.tar.gz");
+                    await File.WriteAllBytesAsync(tarPath, bytes);
+
+                    statusCallback?.Invoke("Extracting SteamCMD...");
+                    // Simple tar extraction if tar is available, or use a library. 
+                    // For now assuming 'tar' command exists on Linux
+                    
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "tar",
+                        Arguments = $"-xzf \"{tarPath}\" -C \"{_baseDir}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    Process.Start(psi).WaitForExit();
+                    
+                    File.Delete(tarPath);
+                }
             }
 
             if (File.Exists(_steamCmdExe))

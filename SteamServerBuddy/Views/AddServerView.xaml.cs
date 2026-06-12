@@ -1,4 +1,4 @@
-using System.Windows.Controls;
+using Avalonia.Controls;
 
 namespace SteamServerBuddy.Views
 {
@@ -7,17 +7,6 @@ namespace SteamServerBuddy.Views
         public AddServerView()
         {
             InitializeComponent();
-        }
-
-        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = e.Uri.AbsoluteUri,
-                UseShellExecute = true
-            };
-            System.Diagnostics.Process.Start(psi);
-            e.Handled = true;
         }
     }
 }

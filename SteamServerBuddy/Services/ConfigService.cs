@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -11,6 +12,12 @@ namespace SteamServerBuddy.Services
     public class ConfigService
     {
         private readonly string _configsDir;
+
+        private static readonly Dictionary<string, string> SchemaAliases = new(StringComparer.OrdinalIgnoreCase)
+        {
+            // Palworld game app -> Palworld Dedicated Server app/config schema.
+            ["1623730"] = "2394010"
+        };
 
         private static readonly Dictionary<string, List<OptionDefinition>> NativeEnumRegistry = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -84,7 +91,8 @@ namespace SteamServerBuddy.Services
 
         public async Task<GameSchema> LoadSchemaAsync(string appId, string serverPath = null)
         {
-            var path = Path.Combine(_configsDir, $"{appId}.json");
+            var schemaAppId = ResolveSchemaAppId(appId);
+            var path = Path.Combine(_configsDir, $"{schemaAppId}.json");
             if (File.Exists(path))
             {
                 var json = await File.ReadAllTextAsync(path);
@@ -92,7 +100,7 @@ namespace SteamServerBuddy.Services
             }
 
             // Fallback: Try name-based lookup
-            var namePath = Path.Combine(_configsDir, $"{appId.ToLower()}.json");
+            var namePath = Path.Combine(_configsDir, $"{schemaAppId.ToLower()}.json");
             if (File.Exists(namePath))
             {
                 var json = await File.ReadAllTextAsync(namePath);
@@ -256,8 +264,7 @@ namespace SteamServerBuddy.Services
                             }
                         }
                     }
-                    // TODO: Implement INI parser if needed
-                    else if (configFile.Format.ToLower() == "ini")
+                    else if (IsKeyValueFormat(configFile.Format))
                     {
                         var lines = await File.ReadAllLinesAsync(fullPath);
                         foreach (var field in configFile.Fields)
@@ -348,7 +355,7 @@ namespace SteamServerBuddy.Services
                             await File.WriteAllTextAsync(fullPath, obj.ToString(Formatting.Indented));
                         }
                     }
-                    else if (configFile.Format.ToLower() == "ini")
+                    else if (IsKeyValueFormat(configFile.Format))
                     {
                         List<string> lines = File.Exists(fullPath) 
                             ? (await File.ReadAllLinesAsync(fullPath)).ToList() 
@@ -429,6 +436,188 @@ namespace SteamServerBuddy.Services
             }
         }
 
+        public async Task<int?> DetectServerPortAsync(string appId, string serverPath)
+        {
+            if (string.IsNullOrWhiteSpace(serverPath) || !Directory.Exists(serverPath)) return GetKnownDefaultPort(appId);
+
+            var schema = await LoadSchemaAsync(appId, serverPath);
+            var values = schema != null ? await LoadSettingsValuesAsync(schema, serverPath) : new Dictionary<string, object>();
+            var detected = FindPortInValues(values);
+            if (detected.HasValue) return detected;
+
+            detected = await FindPortInConfigFilesAsync(serverPath);
+            if (detected.HasValue) return detected;
+
+            return GetKnownDefaultPort(appId);
+        }
+
+        private static int? FindPortInValues(Dictionary<string, object> values)
+        {
+            var preferredKeys = new[]
+            {
+                "port",
+                "serverport",
+                "server_port",
+                "gameport",
+                "game_port",
+                "queryport",
+                "query_port"
+            };
+
+            foreach (var preferred in preferredKeys)
+            {
+                var match = values.FirstOrDefault(v => IsPortKey(v.Key, preferred));
+                if (!string.IsNullOrEmpty(match.Key) && TryReadPort(match.Value, out var port)) return port;
+            }
+
+            foreach (var value in values)
+            {
+                if (LooksLikePortKey(value.Key) && TryReadPort(value.Value, out var port)) return port;
+            }
+
+            return null;
+        }
+
+        private static string ResolveSchemaAppId(string appId)
+        {
+            return !string.IsNullOrWhiteSpace(appId) && SchemaAliases.TryGetValue(appId, out var alias)
+                ? alias
+                : appId;
+        }
+
+        private async Task<int?> FindPortInConfigFilesAsync(string serverPath)
+        {
+            var extensions = new[] { "*.ini", "*.cfg", "*.txt", "*.json" };
+            var files = new List<string>();
+
+            foreach (var extension in extensions)
+            {
+                files.AddRange(Directory.GetFiles(serverPath, extension, SearchOption.AllDirectories));
+            }
+
+            foreach (var file in files.Where(IsLikelyConfigFile).OrderBy(f => f.Length).Take(40))
+            {
+                try
+                {
+                    var content = await File.ReadAllTextAsync(file);
+                    var detected = Path.GetExtension(file).Equals(".json", StringComparison.OrdinalIgnoreCase)
+                        ? FindPortInJson(content)
+                        : FindPortInText(content);
+
+                    if (detected.HasValue) return detected;
+                }
+                catch
+                {
+                    // Ignore unreadable or malformed config files during discovery.
+                }
+            }
+
+            return null;
+        }
+
+        private static int? FindPortInJson(string content)
+        {
+            try
+            {
+                var token = JToken.Parse(content);
+                return FindPortInJsonToken(token);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static int? FindPortInJsonToken(JToken token)
+        {
+            if (token is JObject obj)
+            {
+                foreach (var prop in obj.Properties())
+                {
+                    if (LooksLikePortKey(prop.Name) && TryReadPort(prop.Value.ToString(), out var port)) return port;
+
+                    var nested = FindPortInJsonToken(prop.Value);
+                    if (nested.HasValue) return nested;
+                }
+            }
+            else if (token is JArray arr)
+            {
+                foreach (var child in arr)
+                {
+                    var nested = FindPortInJsonToken(child);
+                    if (nested.HasValue) return nested;
+                }
+            }
+
+            return null;
+        }
+
+        private static int? FindPortInText(string content)
+        {
+            var matches = Regex.Matches(content, @"(?im)^\s*[""']?(?<key>[A-Za-z0-9_.-]*port[A-Za-z0-9_.-]*)[""']?\s*[:=]\s*[""']?(?<value>\d{2,5})[""']?");
+            foreach (Match match in matches)
+            {
+                var key = match.Groups["key"].Value;
+                var value = match.Groups["value"].Value;
+                if (LooksLikePortKey(key) && TryReadPort(value, out var port)) return port;
+            }
+
+            return null;
+        }
+
+        private static bool IsLikelyConfigFile(string path)
+        {
+            var lower = path.ToLowerInvariant();
+            if (lower.Contains("\\steamapps\\") || lower.Contains("\\_commonredist\\")) return false;
+            if (lower.Contains("crash") || lower.Contains("log") || lower.Contains("backup")) return false;
+            return true;
+        }
+
+        private static bool IsPortKey(string key, string expected)
+        {
+            var normalized = NormalizePortKey(key);
+            return normalized.Equals(expected.Replace("_", ""), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool LooksLikePortKey(string key)
+        {
+            var normalized = NormalizePortKey(key);
+            return normalized.Contains("port", StringComparison.OrdinalIgnoreCase)
+                && !normalized.Contains("viewport", StringComparison.OrdinalIgnoreCase)
+                && !normalized.Contains("teleport", StringComparison.OrdinalIgnoreCase)
+                && !normalized.Contains("airport", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizePortKey(string key)
+        {
+            var shortKey = key.Split('_').LastOrDefault() ?? key;
+            return Regex.Replace(shortKey, @"[^A-Za-z0-9]", "").ToLowerInvariant();
+        }
+
+        private static bool TryReadPort(object value, out int port)
+        {
+            port = 0;
+            if (!int.TryParse(value?.ToString(), out var parsed)) return false;
+            if (parsed < 1 || parsed > 65535) return false;
+
+            port = parsed;
+            return true;
+        }
+
+        private static int? GetKnownDefaultPort(string appId)
+        {
+            return appId switch
+            {
+                "2394010" => 8211,  // Palworld
+                "1203620" => 15636, // Enshrouded
+                "892970" => 2456,   // Valheim
+                "1604030" => 9876,  // V Rising
+                "4019830" => 7777,  // RuneScape Dragonwilds: Dedicated Server
+                "1374490" => 7777,  // RuneScape Dragonwilds
+                _ => null
+            };
+        }
+
         private Dictionary<string, string> ParsePalworldSettings(string line)
         {
             var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -477,6 +666,14 @@ namespace SteamServerBuddy.Services
                 // Let's trim them to have a clean "raw" value.
                 values[kv[0].Trim()] = kv[1].Trim().Trim('"');
             }
+        }
+
+        private static bool IsKeyValueFormat(string format)
+        {
+            return format.Equals("ini", StringComparison.OrdinalIgnoreCase) ||
+                   format.Equals("cfg", StringComparison.OrdinalIgnoreCase) ||
+                   format.Equals("txt", StringComparison.OrdinalIgnoreCase) ||
+                   format.Equals("text", StringComparison.OrdinalIgnoreCase);
         }
 
         private string UpdatePalworldSettings(string originalLine, Dictionary<string, string> values)

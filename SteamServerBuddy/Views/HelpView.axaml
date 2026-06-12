@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+             x:Class="SteamServerBuddy.Views.HelpView">
+    <Grid RowDefinitions="Auto,*" Margin="20">
+        <StackPanel>
+            <TextBlock Text="Tutorial" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource AppTextBrush}"/>
+            <TextBlock Text="Manual port forwarding and app guide" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="14"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Margin="0,22,0,0" Padding="18" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+            <TextBox Text="{Binding HelpText}"
+                     AcceptsReturn="True"
+                     IsReadOnly="True"
+                     TextWrapping="Wrap"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Foreground="{DynamicResource AppTextBrush}"/>
+        </Border>
+    </Grid>
+</UserControl>

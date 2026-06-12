@@ -1,0 +1,93 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SteamServerBuddy.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="820"
+        x:Class="SteamServerBuddy.MainWindow"
+        Title="Steam Server Buddy"
+        Width="1280" Height="820"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBackgroundBrush}">
+
+    <Grid ColumnDefinitions="240, *">
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="{DynamicResource AppSidebarBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto, Auto, *, Auto, Auto">
+                <StackPanel Grid.Row="0" Margin="20,24,20,28" Spacing="4">
+                    <TextBlock Text="Steam Server Buddy" Foreground="{DynamicResource AppTextBrush}" FontSize="17" FontWeight="Bold"/>
+                    <TextBlock Text="v2.0.0" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="12"/>
+                </StackPanel>
+                
+                <!-- Navigation -->
+                <StackPanel Grid.Row="1" Spacing="8" Margin="14,0">
+                    <RadioButton Content="Dashboard" 
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateCommand}" 
+                                 CommandParameter="Dashboard"
+                                 IsChecked="True"
+                                 Padding="14,10"/>
+
+                    <RadioButton Content="Install Server" 
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateCommand}" 
+                                 CommandParameter="Add"
+                                 Padding="14,10"/>
+
+                    <RadioButton Content="Server Catalog" 
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateCommand}" 
+                                 CommandParameter="Catalog"
+                                 Padding="14,10"/>
+
+                    <RadioButton Content="Installed Servers" 
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateCommand}" 
+                                 CommandParameter="Servers"
+                                 Padding="14,10"/>
+
+                    <RadioButton Content="Settings" 
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateCommand}" 
+                                 CommandParameter="Settings"
+                                 Padding="14,10"/>
+
+                    <RadioButton Content="Logs" 
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateCommand}" 
+                                 CommandParameter="Console"
+                                 Padding="14,10"/>
+
+                    <RadioButton Content="Tutorial" 
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateCommand}" 
+                                 CommandParameter="Help"
+                                 Padding="14,10"/>
+                </StackPanel>
+
+                <Border Grid.Row="3" Margin="14" Padding="16" CornerRadius="6" Background="{DynamicResource AppPanelAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="SteamCMD" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding DashboardVM.SteamCMDStatus}" Foreground="#35D07F"/>
+                        <Button Content="Setup / Fix" Command="{Binding DashboardVM.FixSteamCMDCommand}" Padding="10,7"/>
+                    </StackPanel>
+                </Border>
+
+                <Button Grid.Row="4"
+                        Content="Created by AKALegend90"
+                        Click="OpenAuthorGitHub"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{DynamicResource AppMutedTextBrush}"
+                        FontSize="11"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,15"
+                        Padding="4"
+                        Cursor="Hand"/>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <TransitioningContentControl Grid.Column="1" Content="{Binding CurrentView}"/>
+    </Grid>
+</Window>

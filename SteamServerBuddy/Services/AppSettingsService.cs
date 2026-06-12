@@ -9,6 +9,7 @@ namespace SteamServerBuddy.Services
         public string ServerInstallPath { get; set; } = "";
         public string DiscordWebhookUrl { get; set; } = "";
         public bool EnableDiscordAlerts { get; set; }
+        public string Theme { get; set; } = AppThemeService.DarkTheme;
     }
 
     public class AppSettingsService
@@ -18,7 +19,8 @@ namespace SteamServerBuddy.Services
 
         public AppSettingsService()
         {
-            _settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_settings.json");
+            AppPaths.EnsureDataDirectories();
+            _settingsPath = AppPaths.SettingsPath;
             Load();
         }
 
@@ -44,8 +46,10 @@ namespace SteamServerBuddy.Services
             // Default install path if not set
             if (string.IsNullOrEmpty(_settings.ServerInstallPath))
             {
-                _settings.ServerInstallPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "servers");
+                _settings.ServerInstallPath = AppPaths.ServersDir;
             }
+
+            _settings.Theme = Globals.Theme.Normalize(_settings.Theme);
         }
 
         public void Save()
@@ -53,6 +57,7 @@ namespace SteamServerBuddy.Services
             try
             {
                 var json = JsonConvert.SerializeObject(_settings, Formatting.Indented);
+                Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
                 File.WriteAllText(_settingsPath, json);
             }
             catch
@@ -82,6 +87,14 @@ namespace SteamServerBuddy.Services
         public void SetEnableDiscordAlerts(bool enabled)
         {
             _settings.EnableDiscordAlerts = enabled;
+            Save();
+        }
+
+        public string GetTheme() => _settings.Theme;
+
+        public void SetTheme(string theme)
+        {
+            _settings.Theme = Globals.Theme.Normalize(theme);
             Save();
         }
     }

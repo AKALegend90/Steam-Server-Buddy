@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -24,6 +25,12 @@ namespace SteamServerBuddy.ViewModels
         private string _appId;
 
         [ObservableProperty]
+        private string _installPath;
+
+        [ObservableProperty]
+        private string _detailStatus = "";
+
+        [ObservableProperty]
         private double _installProgress = 0;
 
         [ObservableProperty]
@@ -35,7 +42,6 @@ namespace SteamServerBuddy.ViewModels
         // Automation & Monitoring
         [ObservableProperty]
         private bool _autoRestart;
-
 
         [ObservableProperty]
         private bool _autoUpdateEnabled;
@@ -63,12 +69,30 @@ namespace SteamServerBuddy.ViewModels
         [ObservableProperty]
         private string _memoryUsage = "0 MB";
 
+        [ObservableProperty]
+        private int _serverPort;
+
+        [ObservableProperty]
+        private string _launchArguments = "";
+
+        [ObservableProperty]
+        private string _tunnelStatus = "Use this when router forwarding is annoying or your ISP blocks inbound traffic.";
+
         // Notification Toggles
 
 
 
+        [ObservableProperty]
+        private bool _scheduledRestartEnabled;
+
+        [ObservableProperty]
+        private int _scheduledRestartInterval = 6;
+
+        private DateTime _lastServerStartTime;
+        private bool _warningSent = false;
         private System.Timers.Timer _monitorTimer;
         private ServerItemViewModel _currentServer;
+        private Process _playitProcess;
 
         public ServerDetailViewModel()
         {
@@ -80,6 +104,7 @@ namespace SteamServerBuddy.ViewModels
         {
             ServerName = server.Name;
             AppId = server.AppId;
+            InstallPath = server.Info.InstallPath;
             _currentServer = server;
             IsInstalled = server.Info.IsInstalled;
 
@@ -90,6 +115,10 @@ namespace SteamServerBuddy.ViewModels
             AutoUpdateDay = !string.IsNullOrEmpty(server.Info.AutoUpdateDay) ? server.Info.AutoUpdateDay : "Daily";
             AutoBackupEnabled = server.Info.AutoBackupEnabled;
             AutoBackupInterval = server.Info.AutoBackupIntervalHours;
+            ScheduledRestartEnabled = server.Info.ScheduledRestartEnabled;
+            ScheduledRestartInterval = server.Info.ScheduledRestartIntervalHours;
+            ServerPort = server.Info.Port;
+            LaunchArguments = server.Info.LaunchArguments ?? "";
             
 
             
@@ -101,6 +130,18 @@ namespace SteamServerBuddy.ViewModels
             // Load Settings
             SettingsVM.IsEmbedded = true;
             await SettingsVM.LoadAsync(server.AppId, server.Name, server.Info.InstallPath);
+
+            if (ServerPort <= 0)
+            {
+                var detectedPort = await Globals.Config.DetectServerPortAsync(server.AppId, server.Info.InstallPath);
+                if (detectedPort.HasValue)
+                {
+                    ServerPort = detectedPort.Value;
+                    server.Info.Port = detectedPort.Value;
+                    await Globals.WebAPI.UpdateServerInfoAsync(server.Info);
+                    DetailStatus = $"Detected server port {detectedPort.Value} from settings.";
+                }
+            }
 
             _monitorTimer.Start();
             
@@ -120,52 +161,73 @@ namespace SteamServerBuddy.ViewModels
         [RelayCommand]
         public void GoBack()
         {
-            if (System.Windows.Application.Current.MainWindow?.DataContext is MainViewModel mainVm)
+             // Avalonia Navigation logic needed.
+             // Usually handled via Messenger or Event, or accessing ViewLocator resolved MainWindow ViewModel?
+             // Since we don't have static access to MainWindow easily in Avalonia without casting ApplicationLifetime
+             if (Avalonia.Application.Current.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+                 desktop.MainWindow.DataContext is MainViewModel mainVm)
+             {
+                 mainVm.CurrentView = mainVm.ServerGalleryVM;
+                 _ = mainVm.ServerGalleryVM.RefreshCommand.ExecuteAsync(null);
+             }
+        }
+
+        [RelayCommand]
+        public void OpenServerFolder()
+        {
+            if (_currentServer == null) return;
+
+            if (!Directory.Exists(_currentServer.Info.InstallPath))
             {
-                // Navigate back to the gallery
-                mainVm.CurrentView = mainVm.ServerGalleryVM;
+                DetailStatus = "Server folder not found.";
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = _currentServer.Info.InstallPath,
+                    UseShellExecute = true
+                });
+                DetailStatus = "";
+            }
+            catch (Exception ex)
+            {
+                DetailStatus = $"Open folder failed: {ex.Message}";
             }
         }
 
         [RelayCommand]
-        public void StartStopServer()
+        public async Task StartStopServer()
         {
             if (_currentServer == null) return;
             
             if (IsRunning)
             {
                 Globals.ProcessManager.StopServer(_currentServer.AppId);
+                DetailStatus = "Stop requested.";
             }
             else
             {
-                var exePath = FindServerExecutable(_currentServer.Info.InstallPath);
+                    var exePath = Globals.Executables.FindServerExecutable(_currentServer.Info.InstallPath);
                 if (!string.IsNullOrEmpty(exePath))
                 {
-                    Globals.ProcessManager.StartServer(_currentServer.AppId, exePath);
+                    Globals.ProcessManager.StartServer(_currentServer.AppId, exePath, LaunchArguments ?? "");
+                    DetailStatus = "Start requested.";
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show("Could not find server executable (.exe/start.bat)", "Error");
+                    DetailStatus = "Could not find a server executable in this folder.";
                 }
             }
+            // Reset timers on state change
+            if (IsRunning) 
+            {
+                 _lastServerStartTime = DateTime.Now;
+                 _warningSent = false;
+            }
             UpdateStats(); 
-        }
-
-        private string FindServerExecutable(string installPath)
-        {
-            if (!Directory.Exists(installPath)) return null;
-            // 1. Look for obvious "start.bat" or "run.bat"
-            var batFiles = Directory.GetFiles(installPath, "*start*.bat").Concat(Directory.GetFiles(installPath, "*run*.bat"));
-            var bat = batFiles.FirstOrDefault();
-            if (bat != null) return bat;
-
-            // 2. Look for obvious exe with "server" in name
-            var exeFiles = Directory.GetFiles(installPath, "*.exe");
-            var serverExe = exeFiles.FirstOrDefault(f => f.ToLower().Contains("server") && !f.ToLower().Contains("unity"));
-            if (serverExe != null) return serverExe;
-
-            // 3. Fallback
-            return exeFiles.FirstOrDefault();
         }
 
         private void UpdateStats()
@@ -175,12 +237,192 @@ namespace SteamServerBuddy.ViewModels
             var running = Globals.ProcessManager.IsRunning(_currentServer.AppId);
             var stats = Globals.ProcessManager.GetPerformance(_currentServer.AppId);
             
-            System.Windows.Application.Current.Dispatcher.Invoke(() => 
+            Avalonia.Threading.Dispatcher.UIThread.Invoke(() => 
             {
                 IsRunning = running;
                 CpuUsage = $"{stats.CpuUsagePercent}%";
                 MemoryUsage = $"{stats.MemoryUsageMb} MB";
             });
+
+            // Scheduled Restart Logic
+            if (running && ScheduledRestartEnabled && ScheduledRestartInterval > 0)
+            {
+                var elapsed = DateTime.Now - _lastServerStartTime;
+                var remainingHours = ScheduledRestartInterval - elapsed.TotalHours;
+
+                // Warning (5 mins before)
+                if (remainingHours <= (5.0 / 60.0) && remainingHours > 0 && !_warningSent)
+                {
+                     _warningSent = true;
+                     if (_currentServer.Info.EnableDiscordAlerts)
+                     {
+                         _ = Globals.Notification.SendDiscordAlertAsync(
+                             _currentServer.Info.DiscordWebhookUrl, 
+                             $"Scheduled restart: server '{_currentServer.Name}' will restart in 5 minutes."); 
+                     }
+                }
+
+                // Restart
+                if (remainingHours <= 0)
+                {
+                    _lastServerStartTime = DateTime.Now; // Reset immediately to prevent double restart
+                    _warningSent = false;
+                    
+                    Avalonia.Threading.Dispatcher.UIThread.Invoke(() => 
+                    {
+                        // Stop
+                        Globals.ProcessManager.StopServer(_currentServer.AppId);
+                        
+                        // Restart after delay
+                        Task.Run(async () => 
+                        {
+                            await Task.Delay(5000); // Wait 5s
+                             Avalonia.Threading.Dispatcher.UIThread.Invoke(() => _ = StartStopServer()); // Call Start again
+                        });
+                    });
+                }
+            }
+        }
+
+        [RelayCommand]
+        public async Task DetectServerPort()
+        {
+            if (_currentServer == null) return;
+
+            DetailStatus = "Looking for server port in settings files...";
+            var detectedPort = await Globals.Config.DetectServerPortAsync(_currentServer.AppId, _currentServer.Info.InstallPath);
+
+            if (detectedPort.HasValue)
+            {
+                ServerPort = detectedPort.Value;
+                _currentServer.Info.Port = detectedPort.Value;
+                await Globals.WebAPI.UpdateServerInfoAsync(_currentServer.Info);
+                DetailStatus = $"Detected and saved server port {detectedPort.Value}.";
+            }
+            else
+            {
+                DetailStatus = "No server port found. You can enter it manually, then save automation settings.";
+            }
+        }
+
+        private async Task<int> ResolveServerPortAsync()
+        {
+            if (_currentServer == null) return 0;
+
+            var port = ServerPort > 0 ? ServerPort : _currentServer.Info.Port;
+            if (port <= 0)
+            {
+                DetailStatus = "Looking for server port in settings files...";
+                var detected = await Globals.Config.DetectServerPortAsync(_currentServer.AppId, _currentServer.Info.InstallPath);
+                if (detected.HasValue) port = detected.Value;
+            }
+
+            if (port > 0 && port != _currentServer.Info.Port)
+            {
+                ServerPort = port;
+                _currentServer.Info.Port = port;
+                await Globals.WebAPI.UpdateServerInfoAsync(_currentServer.Info);
+            }
+
+            return port;
+        }
+
+        [RelayCommand]
+        public void OpenPlayitDownload()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://playit.gg/download/windows",
+                    UseShellExecute = true
+                });
+                TunnelStatus = "Download playit, run it once, claim the agent, then create a UDP tunnel to this server port.";
+            }
+            catch (Exception ex)
+            {
+                TunnelStatus = $"Could not open playit download page: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        public void OpenPlayitDashboard()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://playit.gg/account/tunnels",
+                    UseShellExecute = true
+                });
+                TunnelStatus = "Create a UDP tunnel with local address 127.0.0.1 and the port shown in this app.";
+            }
+            catch (Exception ex)
+            {
+                TunnelStatus = $"Could not open playit dashboard: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        public async Task StartPlayitTunnel()
+        {
+            if (_currentServer == null) return;
+
+            var port = await ResolveServerPortAsync();
+            if (port <= 0)
+            {
+                TunnelStatus = "Detect or enter the server port before starting a tunnel.";
+                return;
+            }
+
+            if (!await IsPlayitInstalledAsync())
+            {
+                TunnelStatus = "playit is not installed yet. Use Download playit, then run it and claim the agent.";
+                return;
+            }
+
+            try
+            {
+                if (_playitProcess == null || _playitProcess.HasExited)
+                {
+                    _playitProcess = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "playit",
+                        UseShellExecute = true,
+                        WindowStyle = ProcessWindowStyle.Normal
+                    });
+                }
+
+                TunnelStatus = $"playit agent started. In the playit dashboard, create a UDP tunnel to 127.0.0.1:{port}, then share the playit address.";
+            }
+            catch (Exception ex)
+            {
+                TunnelStatus = $"Could not start playit: {ex.Message}";
+            }
+        }
+
+        private static async Task<bool> IsPlayitInstalledAsync()
+        {
+            try
+            {
+                var psi = new ProcessStartInfo("cmd.exe", "/c where playit")
+                {
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false
+                };
+
+                using var process = Process.Start(psi);
+                if (process == null) return false;
+
+                await process.WaitForExitAsync();
+                return process.ExitCode == 0;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         [RelayCommand]
@@ -194,11 +436,28 @@ namespace SteamServerBuddy.ViewModels
             _currentServer.Info.AutoUpdateDay = AutoUpdateDay;
             _currentServer.Info.AutoBackupEnabled = AutoBackupEnabled;
             _currentServer.Info.AutoBackupIntervalHours = AutoBackupInterval;
-            
+            _currentServer.Info.ScheduledRestartEnabled = ScheduledRestartEnabled;
+            _currentServer.Info.ScheduledRestartIntervalHours = ScheduledRestartInterval;
+            _currentServer.Info.Port = ServerPort;
+            _currentServer.Info.LaunchArguments = LaunchArguments ?? "";
+
+            if (ServerPort < 0 || ServerPort > 65535)
+            {
+                DetailStatus = "Server port must be between 0 and 65535.";
+                return;
+            }
+
+            if (ServerPort > 0 && Globals.Network.IsUdpPortInUse(ServerPort) && !IsRunning)
+            {
+                DetailStatus = $"Warning: UDP port {ServerPort} appears to be in use. Settings saved anyway.";
+            }
 
             
             await Globals.WebAPI.UpdateServerInfoAsync(_currentServer.Info);
-            System.Windows.MessageBox.Show("Automation settings saved!", "Success");
+            if (!DetailStatus.StartsWith("Warning:"))
+            {
+                DetailStatus = "Automation settings saved.";
+            }
         }
 
         [ObservableProperty]
@@ -261,12 +520,12 @@ namespace SteamServerBuddy.ViewModels
         {
             if (_currentServer == null) return;
 
-            var res = System.Windows.MessageBox.Show($"Are you sure you want to uninstall this server?\nThis will DELETE ALL FILES in:\n{_currentServer.Info.InstallPath}", 
-                                                     "Confirm Uninstall", 
-                                                     System.Windows.MessageBoxButton.YesNo, 
-                                                     System.Windows.MessageBoxImage.Warning);
-            
-            if (res != System.Windows.MessageBoxResult.Yes) return;
+            var confirmed = await Globals.Dialogs.ConfirmAsync(
+                "Remove server files",
+                $"This will stop the server, delete all files in:\n{_currentServer.Info.InstallPath}\n\nThis cannot be undone.",
+                "Delete Files");
+
+            if (!confirmed) return;
 
             try
             {
@@ -283,14 +542,19 @@ namespace SteamServerBuddy.ViewModels
 
                 _currentServer.Info.IsInstalled = false;
                 IsInstalled = false;
-                System.Windows.MessageBox.Show("Server uninstalled successfully.", "Success");
-                
-                // Optionally go back since there's nothing to see? 
-                // Or stay here to allow Re-Install. User request implies staying is fine.
+                await Globals.WebAPI.RemoveCustomServerAsync(_currentServer.AppId);
+                DetailStatus = "Server removed.";
+
+                if (Avalonia.Application.Current.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+                    desktop.MainWindow.DataContext is MainViewModel mainVm)
+                {
+                    await mainVm.ServerGalleryVM.RefreshCommand.ExecuteAsync(null);
+                    mainVm.CurrentView = mainVm.ServerGalleryVM;
+                }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Uninstall failed: {ex.Message}", "Error");
+                DetailStatus = $"Remove failed: {ex.Message}";
             }
         }
         [RelayCommand]
@@ -301,7 +565,7 @@ namespace SteamServerBuddy.ViewModels
             {
                 var list = await Globals.Backups.GetBackupsAsync(_currentServer.Info.InstallPath);
                 
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                Avalonia.Threading.Dispatcher.UIThread.Invoke(() =>
                 {
                     Backups.Clear();
                     foreach (var b in list) Backups.Add(b);
@@ -319,11 +583,11 @@ namespace SteamServerBuddy.ViewModels
             {
                 await Globals.Backups.CreateBackupAsync(_currentServer.Name, _currentServer.Info.InstallPath);
                 await LoadBackupsAsync();
-                System.Windows.MessageBox.Show("Backup created successfully!", "Success");
+                DetailStatus = "Backup created.";
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Backup failed: {ex.Message}", "Error");
+                DetailStatus = $"Backup failed: {ex.Message}";
             }
         }
 
@@ -331,9 +595,13 @@ namespace SteamServerBuddy.ViewModels
         public async Task RestoreBackup(Services.BackupInfo backup)
         {
             if (backup == null || _currentServer == null) return;
-            
-            var res = System.Windows.MessageBox.Show($"Are you sure you want to restore '{backup.Name}'?\nThis will overwrite current files.", "Confirm Restore", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
-            if (res != System.Windows.MessageBoxResult.Yes) return;
+
+            var confirmed = await Globals.Dialogs.ConfirmAsync(
+                "Restore backup",
+                $"Restore '{backup.Name}'?\n\nCurrent server files may be overwritten.",
+                "Restore");
+
+            if (!confirmed) return;
 
             try
             {
@@ -344,11 +612,11 @@ namespace SteamServerBuddy.ViewModels
                 }
 
                 await Globals.Backups.RestoreBackupAsync(backup.FullPath, _currentServer.Info.InstallPath);
-                System.Windows.MessageBox.Show("Backup restored successfully!", "Success");
+                DetailStatus = "Backup restored.";
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Restore failed: {ex.Message}", "Error");
+                DetailStatus = $"Restore failed: {ex.Message}";
             }
         }
 
@@ -356,17 +624,23 @@ namespace SteamServerBuddy.ViewModels
         public async Task DeleteBackup(Services.BackupInfo backup)
         {
             if (backup == null) return;
-             var res = System.Windows.MessageBox.Show($"Delete backup '{backup.Name}'?", "Confirm Delete", System.Windows.MessageBoxButton.YesNo);
-             if (res != System.Windows.MessageBoxResult.Yes) return;
+
+             var confirmed = await Globals.Dialogs.ConfirmAsync(
+                 "Delete backup",
+                 $"Delete backup '{backup.Name}'?\n\nThis cannot be undone.",
+                 "Delete");
+
+             if (!confirmed) return;
 
              try 
              {
                  await Globals.Backups.DeleteBackupAsync(backup.FullPath);
                  await LoadBackupsAsync();
+                 DetailStatus = "Backup deleted.";
              }
              catch (Exception ex)
              {
-                 System.Windows.MessageBox.Show($"Delete failed: {ex.Message}", "Error");
+                 DetailStatus = $"Delete failed: {ex.Message}";
              }
         }
 
@@ -380,7 +654,7 @@ namespace SteamServerBuddy.ViewModels
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Could not open folder: {ex.Message}", "Error");
+                // MessageBox.Show($"Could not open folder: {ex.Message}", "Error");
             }
         }
 

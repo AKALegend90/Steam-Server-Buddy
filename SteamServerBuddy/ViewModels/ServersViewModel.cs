@@ -4,9 +4,9 @@ using SteamServerBuddy.Models;
 using SteamServerBuddy.Services;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Timers;
 using System;
+using System.Timers;
+using Avalonia; // For Application access if needed, though strictly we should avoid it in VM
 
 namespace SteamServerBuddy.ViewModels
 {
@@ -90,7 +90,7 @@ namespace SteamServerBuddy.ViewModels
         {
             if (string.IsNullOrEmpty(Info.InstallPath))
             {
-                MessageBox.Show("Install Path is invalid.");
+                // MessageBox.Show("Install Path is invalid.");
                 return;
             }
             
@@ -102,18 +102,18 @@ namespace SteamServerBuddy.ViewModels
             
             try 
             {
-                string exe = FindExe(Info.InstallPath);
+                string exe = Globals.Executables.FindServerExecutable(Info.InstallPath);
                 if (exe == null)
                 {
-                    MessageBox.Show("Could not find executable.");
+                    // MessageBox.Show("Could not find executable.");
                     return;
                 }
-                Globals.ProcessManager.StartServer(Info.AppId, exe);
+                Globals.ProcessManager.StartServer(Info.AppId, exe, Info.LaunchArguments ?? "");
                 IsRunning = true;
             } 
             catch (Exception ex)
             {
-                MessageBox.Show($"Start Failed: {ex.Message}");
+                // MessageBox.Show($"Start Failed: {ex.Message}");
             }
         }
 
@@ -136,75 +136,25 @@ namespace SteamServerBuddy.ViewModels
         [RelayCommand]
         public async Task Uninstall()
         {
-            var result = MessageBox.Show(
-                $"Do you want to delete the server files for {Name}?\n\nYes = Delete files and remove from list\nNo = Only remove from list (keep files)\nCancel = Don't uninstall",
-                "Confirm Uninstall",
-                MessageBoxButton.YesNoCancel);
-
-            if (result == MessageBoxResult.Cancel) return;
+            var confirmed = await Globals.Dialogs.ConfirmAsync(
+                "Remove server",
+                $"Remove '{Name}' from Steam Server Buddy?\n\nServer files will stay on disk.",
+                "Remove");
+            if (!confirmed) return;
 
             try
             {
-                // Remove from custom_servers.json via WebAPI
                 await Globals.WebAPI.RemoveCustomServerAsync(Info.AppId);
-
-                // Delete files if requested
-                if (result == MessageBoxResult.Yes)
-                {
-                    if (System.IO.Directory.Exists(Info.InstallPath))
-                    {
-                        // Stop the server first if running
-                        if (IsRunning)
-                        {
-                            Globals.ProcessManager.StopServer(Info.AppId);
-                            await Task.Delay(1000); // Wait for process to stop
-                        }
-
-                        try
-                        {
-                            System.IO.Directory.Delete(Info.InstallPath, true);
-                            MessageBox.Show($"Server '{Name}' has been uninstalled and files deleted.", "Success");
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"Server removed from list, but failed to delete files:\n{ex.Message}\n\nYou may need to delete manually.", "Warning");
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show($"Server '{Name}' removed from list. Files not found.", "Info");
-                    }
-                }
-                else
-                {
-                    MessageBox.Show($"Server '{Name}' removed from list. Files kept at:\n{Info.InstallPath}", "Info");
-                }
-
-                // Trigger parent refresh
-                if (Application.Current.MainWindow?.DataContext is MainViewModel mainVm)
+                if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+                    desktop.MainWindow?.DataContext is MainViewModel mainVm)
                 {
                     await mainVm.ServersVM.RefreshCommand.ExecuteAsync(null);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Uninstall failed: {ex.Message}", "Error");
+                Globals.Diagnostics.Error($"Remove server failed for {Name}", ex);
             }
-        }
-
-        private string FindExe(string dir)
-        {
-             // Simple heuristic: 
-             // 1. Look for known names
-             // 2. Look for any .exe
-             if (!System.IO.Directory.Exists(dir)) return null;
-             
-             // TODO: Add specific overrides map
-             
-             var exes = System.IO.Directory.GetFiles(dir, "*.exe");
-             if (exes.Length > 0) return exes[0];
-             
-             return null;
         }
     }
 }

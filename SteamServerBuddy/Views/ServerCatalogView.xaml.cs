@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace SteamServerBuddy.Views
 {
-    public partial class ServerGalleryView : UserControl
+    public partial class ServerCatalogView : UserControl
     {
-        public ServerGalleryView()
+        public ServerCatalogView()
         {
             InitializeComponent();
         }

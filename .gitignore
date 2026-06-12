@@ -1,0 +1,42 @@
+# Build output
+bin/
+obj/
+dist/
+**/bin/
+**/obj/
+**/dist/
+
+# Local runtime data
+steamcmd/
+servers/
+app_settings.json
+custom_servers.json
+manifests/user_paths.json
+**/steamcmd/
+
+# Logs and crash dumps
+*.log
+*.txt
+crash_log*.txt
+startup_log*.txt
+launch_log*.txt
+build*.txt
+build*.log
+errors.log
+final_build_errors.txt
+diagnostic_log.txt
+vm_diag.txt
+
+# Editor and OS files
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+Thumbs.db
+Desktop.ini
+
+# Scratch folders
+trash_dump/
+__pycache__/
+*.pyc

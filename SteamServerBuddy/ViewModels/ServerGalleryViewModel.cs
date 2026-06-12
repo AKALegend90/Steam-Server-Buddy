@@ -2,12 +2,16 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using Avalonia.Media.Imaging;
+using SteamServerBuddy.Models;
 
 namespace SteamServerBuddy.ViewModels
 {
@@ -62,18 +66,26 @@ namespace SteamServerBuddy.ViewModels
         public string Name { get; }
         public string AppId { get; }
         public string InstallPath { get; }
+        private readonly ServerInfo _info;
 
         [ObservableProperty]
-        private object _imageSource; // Can be string URL or ImageSource object
+        private string _statusMessage = "";
 
         [ObservableProperty]
-        private System.Windows.Media.Stretch _imageStretch = System.Windows.Media.Stretch.UniformToFill;
+        private Bitmap _imageSource;
+
+        [ObservableProperty]
+        private Avalonia.Media.Stretch _imageStretch = Avalonia.Media.Stretch.UniformToFill;
 
         [ObservableProperty]
         private bool _isRunning = false;
 
+        public string SteamType => _info.SteamType;
+        public System.Collections.Generic.List<string> Tags => _info.Tags ?? new();
+
         public ServerCardViewModel(Models.ServerInfo info)
         {
+            _info = info;
             Name = info.Name;
             AppId = info.AppId;
             InstallPath = info.InstallPath;
@@ -84,13 +96,15 @@ namespace SteamServerBuddy.ViewModels
 
         public async Task LoadImageAsync()
         {
-            // 1. Try Steam CDN (Game Header)
-            string url = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{AppId}/header.jpg";
+            // 1. Try persisted Steam/store image, then Steam CDN fallback.
+            string url = !string.IsNullOrWhiteSpace(_info.HeaderImageUrl)
+                ? _info.HeaderImageUrl
+                : $"https://cdn.cloudflare.steamstatic.com/steam/apps/{AppId}/header.jpg";
             bool valid = await CheckUrlExists(url);
 
             if (valid)
             {
-                ImageSource = url;
+                ImageSource = await LoadBitmapAsync(url);
             }
             else
             {
@@ -113,16 +127,8 @@ namespace SteamServerBuddy.ViewModels
 
                 if (!string.IsNullOrEmpty(exePath))
                 {
-                    // Extract icon and create BitmapSource on UI thread to ensure thread affinity
-                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
-                    {
-                        var iconBitmap = ExtractIcon(exePath);
-                        if (iconBitmap != null)
-                        {
-                            ImageSource = iconBitmap;
-                            ImageStretch = System.Windows.Media.Stretch.Uniform;
-                        }
-                    });
+                   // Icon extraction removed for cross-platform compatibility
+                   // TODO: Implement cross-platform icon loading (e.g. from resources or generic icon)
                 }
             }
         }
@@ -172,19 +178,28 @@ namespace SteamServerBuddy.ViewModels
             return exeFiles.FirstOrDefault(f => !f.ToLower().Contains("unity") && !f.ToLower().Contains("crash") && !f.ToLower().Contains("steam"));
         }
 
-        private ImageSource ExtractIcon(string path)
+        // ExtractIcon removed
+
+        [RelayCommand]
+        public async Task OpenDetail()
+        {
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+                desktop.MainWindow?.DataContext is MainViewModel mainVm)
+            {
+                var serverItem = new ServerItemViewModel(_info);
+                await mainVm.OpenDetailCommand.ExecuteAsync(serverItem);
+            }
+        }
+
+        private async Task<Bitmap> LoadBitmapAsync(string url)
         {
             try
             {
-                using (var icon = System.Drawing.Icon.ExtractAssociatedIcon(path))
-                {
-                    if (icon == null) return null;
-                    
-                    return System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
-                        icon.Handle,
-                        System.Windows.Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-                }
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(5);
+                var bytes = await client.GetByteArrayAsync(url);
+                using var stream = new MemoryStream(bytes);
+                return new Bitmap(stream);
             }
             catch
             {
@@ -193,88 +208,53 @@ namespace SteamServerBuddy.ViewModels
         }
 
         [RelayCommand]
-        public async Task OpenDetail()
-        {
-            // Navigate to detail view
-            if (System.Windows.Application.Current.MainWindow?.DataContext is MainViewModel mainVm)
-            {
-                // Create a temporary ServerItemViewModel from the stored ServerInfo
-                var serverList = await Globals.WebAPI.FetchDedicatedServersAsync();
-                var matchingServer = serverList.FirstOrDefault(s => s.AppId == AppId);
-                
-                if (matchingServer != null)
-                {
-                    var serverItem = new ServerItemViewModel(matchingServer);
-                    await mainVm.OpenDetailCommand.ExecuteAsync(serverItem);
-                }
-            }
-        }
-
-        [RelayCommand]
         public void OpenFolder()
         {
-            if (System.IO.Directory.Exists(InstallPath))
+            if (!Directory.Exists(InstallPath))
             {
-                System.Diagnostics.Process.Start("explorer.exe", InstallPath);
+                StatusMessage = "Folder not found.";
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = InstallPath,
+                    UseShellExecute = true
+                });
+                StatusMessage = "";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Open failed: {ex.Message}";
             }
         }
 
         [RelayCommand]
         public async Task Uninstall()
         {
-            var result = System.Windows.MessageBox.Show(
-                $"Do you want to delete the server files for {Name}?\n\nYes = Delete files and remove from list\nNo = Only remove from list (keep files)\nCancel = Don't uninstall",
-                "Confirm Uninstall",
-                System.Windows.MessageBoxButton.YesNoCancel);
-
-            if (result == System.Windows.MessageBoxResult.Cancel) return;
-
             try
             {
-                // Remove from custom_servers.json via WebAPI
+                var confirmed = await Globals.Dialogs.ConfirmAsync(
+                    "Remove server",
+                    $"Remove '{Name}' from Steam Server Buddy?\n\nServer files will stay on disk.",
+                    "Remove");
+                if (!confirmed) return;
+
+                StatusMessage = "Removing...";
                 await Globals.WebAPI.RemoveCustomServerAsync(AppId);
 
-                // Delete files if requested
-                if (result == System.Windows.MessageBoxResult.Yes)
-                {
-                    if (System.IO.Directory.Exists(InstallPath))
-                    {
-                        // Stop the server first if running (simple check via ProcessManager)
-                        if (Globals.ProcessManager.IsRunning(AppId))
-                        {
-                            Globals.ProcessManager.StopServer(AppId);
-                            await Task.Delay(1000); // Wait for process to stop
-                        }
-
-                        try
-                        {
-                            System.IO.Directory.Delete(InstallPath, true);
-                            System.Windows.MessageBox.Show($"Server '{Name}' has been uninstalled and files deleted.", "Success");
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Windows.MessageBox.Show($"Server removed from list, but failed to delete files:\n{ex.Message}\n\nYou may need to delete manually.", "Warning");
-                        }
-                    }
-                    else
-                    {
-                        System.Windows.MessageBox.Show($"Server '{Name}' removed from list. Files not found.", "Info");
-                    }
-                }
-                else
-                {
-                    System.Windows.MessageBox.Show($"Server '{Name}' removed from list. Files kept at:\n{InstallPath}", "Info");
-                }
-
-                // Trigger refresh on the parent view model (ServerGalleryViewModel)
-                if (System.Windows.Application.Current.MainWindow?.DataContext is MainViewModel mainVm)
+                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+                    desktop.MainWindow?.DataContext is MainViewModel mainVm)
                 {
                     await mainVm.ServerGalleryVM.RefreshCommand.ExecuteAsync(null);
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Uninstall failed: {ex.Message}", "Error");
+                StatusMessage = $"Remove failed: {ex.Message}";
+                Debug.WriteLine($"Uninstall failed: {ex.Message}");
             }
         }
     }

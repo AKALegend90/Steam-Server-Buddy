@@ -1,34 +1,34 @@
-using System.Windows;
-using System.Windows.Controls;
+using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using SteamServerBuddy.ViewModels;
 
 namespace SteamServerBuddy.Converters
 {
-    public class SettingsTemplateSelector : DataTemplateSelector
+    public class SettingsTemplateSelector : IDataTemplate
     {
-        public DataTemplate TextTemplate { get; set; }
-        public DataTemplate NumberTemplate { get; set; }
-        public DataTemplate SelectFieldTemplate { get; set; }
-        public DataTemplate ToggleTemplate { get; set; }
+        public IDataTemplate? TextTemplate { get; set; }
+        public IDataTemplate? NumberTemplate { get; set; }
+        public IDataTemplate? SelectFieldTemplate { get; set; }
+        public IDataTemplate? ToggleTemplate { get; set; }
 
-        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        public Control? Build(object? param)
         {
-            if (item is SettingFieldViewModel field)
-            {
-                switch (field.Type)
+            var template = param is SettingFieldViewModel field
+                ? field.Type switch
                 {
-                    case "number":
-                        return NumberTemplate;
-                    case "select":
-                        return SelectFieldTemplate;
-                    case "toggle":
-                    case "boolean":
-                        return ToggleTemplate;
-                    default:
-                        return TextTemplate;
+                    "number" => NumberTemplate,
+                    "select" => SelectFieldTemplate,
+                    "toggle" or "boolean" => ToggleTemplate,
+                    _ => TextTemplate
                 }
-            }
-            return base.SelectTemplate(item, container);
+                : TextTemplate;
+
+            return template?.Build(param);
+        }
+
+        public bool Match(object? data)
+        {
+            return data is SettingFieldViewModel;
         }
     }
 }

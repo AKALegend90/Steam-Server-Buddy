@@ -18,6 +18,15 @@
 - **Auto-Update**: Schedule updates to run automatically.
 - **Backups**: Configure automatic backups to keep your data safe.
 
+### Network & Port Forwarding
+Steam Server Buddy now includes **Auto-Port Forwarding (UPnP)**!
+1. Go to the **Settings** tab (Gear icon) for your server.
+2. Scroll to the **Automation** section.
+3. Enable **"Auto-Port Forward (UPnP)"**.
+4. When you click **START**, the app will attempt to automatically open the required ports on your router.
+
+*Note: This requires your router to have UPnP enabled. If it fails (or if your ISP uses CGNAT), you will still need to manually forward ports.*
+
 ### Discord Notifications
 - Configure a Webhook URL in settings to receive alerts for server starts, stops, and crashes.
 

@@ -1,243 +1,160 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Timers;
-using System.Windows;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SteamServerBuddy.Models;
 using SteamServerBuddy.Services;
 
 namespace SteamServerBuddy.ViewModels
 {
     public partial class DashboardViewModel : ObservableObject
     {
-        [ObservableProperty]
-        private int _totalServers;
-
-        [ObservableProperty]
-        private int _runningServers;
-
-        [ObservableProperty]
-        private string _steamCMDStatus = "Checking...";
-
-        [ObservableProperty]
-        private bool _isSteamCMDInstalled;
-
-        // Host-Level Metrics
-        [ObservableProperty]
-        private double _cpuPercent;
-
-        [ObservableProperty]
-        private string _cpuColor = "#48BB78";
-
-        [ObservableProperty]
-        private double _ramPercent;
-
-        [ObservableProperty]
-        private double _ramUsedGB;
-
-        [ObservableProperty]
-        private double _ramTotalGB;
-
-        [ObservableProperty]
-        private string _ramColor = "#48BB78";
-
-        [ObservableProperty]
-        private double _diskPercent;
-
-        [ObservableProperty]
-        private double _diskFreeGB;
-
-        [ObservableProperty]
-        private double _diskTotalGB;
-
-        [ObservableProperty]
-        private string _diskDrive = "C:";
-
-        [ObservableProperty]
-        private string _diskColor = "#48BB78";
-
-        [ObservableProperty]
-        private double _netInMbps;
-
-        [ObservableProperty]
-        private double _netOutMbps;
-
-        [ObservableProperty]
-        private string _uptime = "0d 0h";
-
-        // Process Metrics for running servers
-        public ObservableCollection<ProcessMetricsViewModel> RunningProcesses { get; } = new();
-
         private readonly ServersViewModel _serversVM;
         private readonly SystemMonitorService _monitor;
         private readonly System.Timers.Timer _monitorTimer;
-        private bool _isWindowFocused = true;
 
+        [ObservableProperty] private int _totalServers;
+        [ObservableProperty] private int _runningServers;
+        [ObservableProperty] private int _stoppedServers;
+        [ObservableProperty] private int _upToDateServers;
+        [ObservableProperty] private string _steamCMDStatus = "Checking...";
+        [ObservableProperty] private bool _isSteamCMDInstalled;
+        [ObservableProperty] private string _uptime = "0d 0h";
+        [ObservableProperty] private double _netInMbps;
+        [ObservableProperty] private double _netOutMbps;
+        [ObservableProperty] private string _activeTasks = "0";
+
+        public ObservableCollection<DashboardServerCardViewModel> ServerCards { get; } = new();
+        public ObservableCollection<ActivityLogItemViewModel> ActivityLog { get; } = new();
         public DashboardViewModel(ServersViewModel serversVM)
         {
             _serversVM = serversVM;
             _monitor = new SystemMonitorService();
-            
+
             RefreshCommand = new AsyncRelayCommand(RefreshAsync);
             FixSteamCMDCommand = new AsyncRelayCommand(FixSteamCMDAsync);
-            KillProcessCommand = new RelayCommand<int>(KillProcess);
+            NavigateAddCommand = new RelayCommand(NavigateAdd);
+            ViewAllServersCommand = new RelayCommand(NavigateServers);
+            ClearActivityCommand = new RelayCommand(() => ActivityLog.Clear());
+            OpenLogsFolderCommand = new RelayCommand(OpenLogsFolder);
 
-            // Setup monitoring timer (1 second interval)
-            _monitorTimer = new System.Timers.Timer(1000);
-            _monitorTimer.Elapsed += (s, e) => UpdateMetrics();
+            AddActivity("Dashboard ready.");
+
+            _monitorTimer = new System.Timers.Timer(3000);
+            _monitorTimer.Elapsed += async (_, _) => await RefreshRuntimeAsync();
             _monitorTimer.Start();
-
-            // Track window focus to pause monitoring when minimized
-            Application.Current.Activated += (s, e) => _isWindowFocused = true;
-            Application.Current.Deactivated += (s, e) => _isWindowFocused = false;
         }
 
         public IAsyncRelayCommand RefreshCommand { get; }
         public IAsyncRelayCommand FixSteamCMDCommand { get; }
-        public IRelayCommand<int> KillProcessCommand { get; }
+        public IRelayCommand NavigateAddCommand { get; }
+        public IRelayCommand ViewAllServersCommand { get; }
+        public IRelayCommand ClearActivityCommand { get; }
+        public IRelayCommand OpenLogsFolderCommand { get; }
 
-        private void UpdateMetrics()
+        public async Task RefreshAsync()
         {
-            // Skip if window not focused to save CPU
-            if (!_isWindowFocused) return;
+            var servers = await Globals.WebAPI.FetchDedicatedServersAsync();
 
-            try
+            ServerCards.Clear();
+            foreach (var server in servers.Take(6))
             {
-                Application.Current?.Dispatcher?.Invoke(() =>
-                {
-                    // CPU
-                    CpuPercent = Math.Round(_monitor.GetCpuPercent(), 1);
-                    CpuColor = SystemMonitorService.GetThresholdColor(CpuPercent);
-
-                    // RAM
-                    var ram = _monitor.GetRamInfo();
-                    RamUsedGB = ram.UsedGB;
-                    RamTotalGB = ram.TotalGB;
-                    RamPercent = ram.Percent;
-                    RamColor = SystemMonitorService.GetThresholdColor(RamPercent);
-
-                    // Disk
-                    var disk = _monitor.GetDiskInfo(Globals.AppSettings.GetServerInstallPath());
-                    DiskFreeGB = disk.FreeGB;
-                    DiskTotalGB = disk.TotalGB;
-                    DiskPercent = disk.Percent;
-                    DiskDrive = disk.DriveLetter;
-                    DiskColor = SystemMonitorService.GetThresholdColor(DiskPercent);
-
-                    // Network
-                    var net = _monitor.GetNetworkIO();
-                    NetInMbps = net.InMbps;
-                    NetOutMbps = net.OutMbps;
-
-                    // Uptime
-                    Uptime = _monitor.GetUptime();
-
-                    // Update process metrics for running servers
-                    UpdateProcessMetrics();
-                });
+                var card = new DashboardServerCardViewModel(server, AddActivity);
+                ServerCards.Add(card);
+                _ = card.LoadImageAsync();
             }
-            catch { }
+
+            TotalServers = servers.Count;
+            RunningServers = servers.Count(s => Globals.ProcessManager.IsRunning(s.AppId));
+            StoppedServers = Math.Max(0, TotalServers - RunningServers);
+            UpToDateServers = TotalServers;
+
+            await _serversVM.RefreshCommand.ExecuteAsync(null);
+
+            var steamCmdPath = Globals.SteamCMD.GetSteamCMDPath();
+            IsSteamCMDInstalled = File.Exists(steamCmdPath);
+            SteamCMDStatus = IsSteamCMDInstalled ? "Up to date" : "Not installed";
+
+            await RefreshRuntimeAsync();
         }
 
-        private void UpdateProcessMetrics()
+        private async Task RefreshRuntimeAsync()
         {
             try
             {
-                var runningServers = _serversVM.Servers.Where(s => s.IsRunning).ToList();
-                
-                // Remove processes that are no longer running
-                var toRemove = RunningProcesses
-                    .Where(p => !runningServers.Any(s => s.Name == p.ServerName))
-                    .ToList();
-                foreach (var p in toRemove) RunningProcesses.Remove(p);
+                var net = _monitor.GetNetworkIO();
+                NetInMbps = net.InMbps;
+                NetOutMbps = net.OutMbps;
+                Uptime = _monitor.GetUptime();
 
-                // Update or add process metrics
-                foreach (var server in runningServers)
+                foreach (var card in ServerCards)
                 {
-                    var process = GetServerProcess(server.Info.InstallPath);
-                    if (process == null) continue;
-
-                    var metrics = _monitor.GetProcessMetrics(process);
-                    if (metrics == null) continue;
-
-                    var existing = RunningProcesses.FirstOrDefault(p => p.ServerName == server.Name);
-                    if (existing != null)
-                    {
-                        existing.Update(metrics);
-                    }
-                    else
-                    {
-                        RunningProcesses.Add(new ProcessMetricsViewModel(server.Name, metrics));
-                    }
+                    card.RefreshStatus();
                 }
-            }
-            catch { }
-        }
 
-        private System.Diagnostics.Process GetServerProcess(string installPath)
-        {
-            try
+                RunningServers = ServerCards.Count(c => c.IsRunning);
+                StoppedServers = Math.Max(0, TotalServers - RunningServers);
+            }
+            catch (Exception ex)
             {
-                // Find exe in install path
-                var exes = System.IO.Directory.GetFiles(installPath, "*.exe", System.IO.SearchOption.AllDirectories)
-                    .Where(f => !f.Contains("steam", StringComparison.OrdinalIgnoreCase) &&
-                                !f.Contains("redist", StringComparison.OrdinalIgnoreCase) &&
-                                !f.Contains("crash", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                foreach (var exe in exes)
-                {
-                    var processName = System.IO.Path.GetFileNameWithoutExtension(exe);
-                    var processes = System.Diagnostics.Process.GetProcessesByName(processName);
-                    if (processes.Any())
-                    {
-                        return processes.First();
-                    }
-                }
+                Globals.Diagnostics.Error("Dashboard runtime refresh failed", ex);
             }
-            catch { }
-            return null;
-        }
-
-        private void KillProcess(int pid)
-        {
-            try
-            {
-                var result = MessageBox.Show(
-                    $"Are you sure you want to kill process {pid}?",
-                    "Confirm Kill",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    _monitor.KillProcess(pid);
-                }
-            }
-            catch { }
         }
 
         public async Task FixSteamCMDAsync()
         {
-            SteamCMDStatus = "Setting up SteamCMD...";
+            SteamCMDStatus = "Setting up...";
+            AddActivity("SteamCMD setup started.");
             await Globals.SteamCMD.EnsureSteamCMDAsync(status => SteamCMDStatus = status);
+            AddActivity("SteamCMD setup finished.");
             await RefreshAsync();
         }
 
-        public async Task RefreshAsync()
+        private void AddActivity(string message)
         {
-            // Update counts from ServersViewModel if loaded
-            TotalServers = _serversVM.Servers.Count;
-            RunningServers = _serversVM.Servers.Count(s => s.IsRunning);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                ActivityLog.Insert(0, new ActivityLogItemViewModel(DateTime.Now, message));
+                while (ActivityLog.Count > 80) ActivityLog.RemoveAt(ActivityLog.Count - 1);
+            });
+        }
 
-            // Check SteamCMD
-            var steamCmdPath = Globals.SteamCMD.GetSteamCMDPath();
-            IsSteamCMDInstalled = System.IO.File.Exists(steamCmdPath);
-            SteamCMDStatus = IsSteamCMDInstalled ? "Installed & Ready" : "Not Found (Click Fix)";
+        private static void NavigateAdd()
+        {
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+                desktop.MainWindow?.DataContext is MainViewModel mainVm)
+            {
+                mainVm.Navigate("Add");
+            }
+        }
 
-            await Task.CompletedTask;
+        private static void NavigateServers()
+        {
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+                desktop.MainWindow?.DataContext is MainViewModel mainVm)
+            {
+                mainVm.Navigate("Servers");
+            }
+        }
+
+        private static void OpenLogsFolder()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = AppPaths.DataDir,
+                    UseShellExecute = true
+                });
+            }
+            catch { }
         }
 
         public void Cleanup()
@@ -247,51 +164,114 @@ namespace SteamServerBuddy.ViewModels
         }
     }
 
-    public partial class ProcessMetricsViewModel : ObservableObject
+    public partial class DashboardServerCardViewModel : ObservableObject
     {
-        [ObservableProperty]
-        private string _serverName;
+        private static readonly HttpClient ImageClient = new();
+        private readonly Action<string> _activity;
 
-        [ObservableProperty]
-        private int _pid;
+        public ServerInfo Info { get; }
+        public string Name => Info.DisplayName;
+        public string AppId => Info.AppId;
+        public string UptimeDisplay => IsRunning ? "Running" : "Stopped";
+        public string StatusLabel => IsRunning ? "Running" : "Stopped";
+        public string StatusColor => IsRunning ? "#35D07F" : "#4A5568";
+        public bool CanStop => IsRunning;
 
-        [ObservableProperty]
-        private double _cpuPercent;
+        [ObservableProperty] private bool _isRunning;
+        [ObservableProperty] private Bitmap _imageSource;
 
-        [ObservableProperty]
-        private string _cpuColor = "#48BB78";
-
-        [ObservableProperty]
-        private double _workingSetMB;
-
-        [ObservableProperty]
-        private double _privateBytesMB;
-
-        [ObservableProperty]
-        private int _threadCount;
-
-        [ObservableProperty]
-        private int _handleCount;
-
-        [ObservableProperty]
-        private string _runningTime;
-
-        public ProcessMetricsViewModel(string serverName, ProcessMetrics metrics)
+        public DashboardServerCardViewModel(ServerInfo info, Action<string> activity)
         {
-            ServerName = serverName;
-            Update(metrics);
+            Info = info;
+            _activity = activity;
+            RefreshStatus();
         }
 
-        public void Update(ProcessMetrics metrics)
+        public IRelayCommand StartCommand => new RelayCommand(Start);
+        public IRelayCommand StopCommand => new RelayCommand(Stop);
+        public IRelayCommand RestartCommand => new RelayCommand(Restart);
+        public IAsyncRelayCommand DetailsCommand => new AsyncRelayCommand(OpenDetailsAsync);
+
+        public void RefreshStatus()
         {
-            Pid = metrics.Pid;
-            CpuPercent = metrics.CpuPercent;
-            CpuColor = SystemMonitorService.GetThresholdColor(CpuPercent);
-            WorkingSetMB = metrics.WorkingSetMB;
-            PrivateBytesMB = metrics.PrivateBytesMB;
-            ThreadCount = metrics.ThreadCount;
-            HandleCount = metrics.HandleCount;
-            RunningTime = metrics.RunningTime;
+            IsRunning = Globals.ProcessManager.IsRunning(AppId);
+            OnPropertyChanged(nameof(UptimeDisplay));
+            OnPropertyChanged(nameof(StatusLabel));
+            OnPropertyChanged(nameof(StatusColor));
+            OnPropertyChanged(nameof(CanStop));
+        }
+
+        public async Task LoadImageAsync()
+        {
+            var url = !string.IsNullOrWhiteSpace(Info.HeaderImageUrl)
+                ? Info.HeaderImageUrl
+                : $"https://cdn.cloudflare.steamstatic.com/steam/apps/{AppId}/header.jpg";
+
+            try
+            {
+                var bytes = await ImageClient.GetByteArrayAsync(url);
+                using var stream = new MemoryStream(bytes);
+                ImageSource = new Bitmap(stream);
+            }
+            catch
+            {
+                // Art is nice-to-have; cards still work without it.
+            }
+        }
+
+        private void Start()
+        {
+            var exe = Globals.Executables.FindServerExecutable(Info.InstallPath);
+            if (string.IsNullOrWhiteSpace(exe))
+            {
+                _activity($"Could not find executable for {Name}.");
+                return;
+            }
+
+            Globals.ProcessManager.StartServer(AppId, exe, Info.LaunchArguments ?? "");
+            _activity($"Started {Name}.");
+            RefreshStatus();
+        }
+
+        private void Stop()
+        {
+            Globals.ProcessManager.StopServer(AppId);
+            _activity($"Stopped {Name}.");
+            RefreshStatus();
+        }
+
+        private void Restart()
+        {
+            Stop();
+            Task.Run(async () =>
+            {
+                await Task.Delay(1500);
+                Avalonia.Threading.Dispatcher.UIThread.Post(Start);
+            });
+            _activity($"Restart requested for {Name}.");
+        }
+
+        private async Task OpenDetailsAsync()
+        {
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+                desktop.MainWindow?.DataContext is MainViewModel mainVm)
+            {
+                await mainVm.OpenDetailCommand.ExecuteAsync(new ServerItemViewModel(Info));
+            }
         }
     }
+
+    public class ActivityLogItemViewModel
+    {
+        public ActivityLogItemViewModel(DateTime time, string message)
+        {
+            Time = time;
+            Message = message;
+        }
+
+        public DateTime Time { get; }
+        public string Message { get; }
+        public string Display => $"[{Time:HH:mm:ss}]  {Message}";
+    }
+
 }

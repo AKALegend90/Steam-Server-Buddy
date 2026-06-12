@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
-using System.Windows.Input;
+
 
 namespace SteamServerBuddy.ViewModels
 {
@@ -13,7 +13,9 @@ namespace SteamServerBuddy.ViewModels
         public ServersViewModel ServersVM { get; } = new ServersViewModel();
         public ServerGalleryViewModel ServerGalleryVM { get; } = new ServerGalleryViewModel();
         public AddServerViewModel AddServerVM { get; } = new AddServerViewModel();
+        public ServerCatalogViewModel CatalogVM { get; } = new ServerCatalogViewModel();
         public AppSettingsViewModel SettingsVM { get; } = new AppSettingsViewModel();
+        public HelpViewModel HelpVM { get; } = new HelpViewModel();
         public ConsoleViewModel ConsoleVM { get; } = new ConsoleViewModel();
         public ServerDetailViewModel ServerDetailVM { get; } = new ServerDetailViewModel();
         public DashboardViewModel DashboardVM { get; }
@@ -38,8 +40,13 @@ namespace SteamServerBuddy.ViewModels
                     CurrentView = ServerGalleryVM;
                     break;
                 case "Add": CurrentView = AddServerVM; break;
+                case "Catalog":
+                    _ = CatalogVM.RefreshAsync();
+                    CurrentView = CatalogVM;
+                    break;
                 case "Settings": CurrentView = SettingsVM; break;
                 case "Console": CurrentView = ConsoleVM; break;
+                case "Help": CurrentView = HelpVM; break;
             }
         }
 

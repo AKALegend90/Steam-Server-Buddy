@@ -1,5 +1,6 @@
-﻿using System.Windows;
-using SteamServerBuddy.ViewModels;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using System.Diagnostics;
 
 namespace SteamServerBuddy
 {
@@ -8,17 +9,15 @@ namespace SteamServerBuddy
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
         }
-        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+
+        private void OpenAuthorGitHub(object? sender, RoutedEventArgs e)
         {
-            var psi = new System.Diagnostics.ProcessStartInfo
+            Process.Start(new ProcessStartInfo
             {
-                FileName = e.Uri.AbsoluteUri,
+                FileName = "https://github.com/AKALegend90",
                 UseShellExecute = true
-            };
-            System.Diagnostics.Process.Start(psi);
-            e.Handled = true;
+            });
         }
     }
 }

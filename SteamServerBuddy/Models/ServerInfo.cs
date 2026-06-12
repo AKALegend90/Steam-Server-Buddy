@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace SteamServerBuddy.Models
@@ -11,8 +12,29 @@ namespace SteamServerBuddy.Models
         [JsonProperty("name")]
         public string Name { get; set; }
 
+        [JsonProperty("steam_type")]
+        public string SteamType { get; set; } = "";
+
+        [JsonProperty("header_image_url")]
+        public string HeaderImageUrl { get; set; } = "";
+
+        [JsonProperty("capsule_image_url")]
+        public string CapsuleImageUrl { get; set; } = "";
+
+        [JsonProperty("steamdb_url")]
+        public string SteamDbUrl { get; set; } = "";
+
+        [JsonProperty("steam_store_url")]
+        public string SteamStoreUrl { get; set; } = "";
+
+        [JsonProperty("tags")]
+        public List<string> Tags { get; set; } = new();
+
         [JsonProperty("install_path")]
         public string InstallPath { get; set; }
+
+        [JsonProperty("launch_arguments")]
+        public string LaunchArguments { get; set; } = "";
 
         [JsonProperty("is_installed")]
         public bool IsInstalled { get; set; }
@@ -58,7 +80,17 @@ namespace SteamServerBuddy.Models
         [JsonProperty("auto_update_schedule")]
         public string AutoUpdateSchedule { get; set; } = "04:00 AM"; // Default 4 AM
 
+        [JsonProperty("port")]
+        public int Port { get; set; } = 0; // 0 means use default logic
+
         [JsonProperty("auto_update_day")]
         public string AutoUpdateDay { get; set; } = "Daily"; // Daily, Monday, etc.
+
+        // Scheduled Restart
+        [JsonProperty("scheduled_restart_enabled")]
+        public bool ScheduledRestartEnabled { get; set; }
+
+        [JsonProperty("scheduled_restart_interval_hours")]
+        public int ScheduledRestartIntervalHours { get; set; } = 6; // Default 6 hours
     }
 }

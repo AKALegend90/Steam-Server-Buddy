@@ -14,32 +14,36 @@ namespace SteamServerBuddy.Services
     {
         private static readonly HttpClient _client = new HttpClient();
         
-        // Paths relative to execution directory (or project root, need to be careful)
-        // In Python: Path(__file__).parent.parent is project root.
-        // In C# Debug: bin/Debug/net8.0/...
-        // We should look for "custom_servers.json" in the AppDomain BaseDirectory or specific relative path.
-        // For development, we'll assume a fixed relative path or copy to output.
-        // Let's assume we want to read from the same place as Python for now? 
-        // User workspace: c:\Users\xyooj\Documents\VS code project folder
-        
-        // Dynamically find project root by looking for "custom_servers.json" in parent folders
-        private string ProjectRoot 
+        public SteamWebAPIService()
         {
-            get 
-            {
-                var dir = AppDomain.CurrentDomain.BaseDirectory;
-                while (dir != null && !File.Exists(Path.Combine(dir, "custom_servers.json")))
-                {
-                    dir = Path.GetDirectoryName(dir);
-                    // Specifically check parent of StemServerBuddyCS too
-                    if (dir != null && Directory.Exists(Path.Combine(dir, "steam-server-buddy-py"))) return dir;
-                }
-                return dir ?? @"c:\Users\xyooj\Documents\VS code project folder";
-            }
+            AppPaths.EnsureDataDirectories();
+            MigrateLegacyFile(FindLegacyCustomServersPath(), CustomServersPath);
+            MigrateLegacyFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "manifests", "user_paths.json"), UserPathsPath);
         }
-        
-        public string CustomServersPath => Path.Combine(ProjectRoot, "custom_servers.json");
-        public string UserPathsPath => Path.Combine(ProjectRoot, "steam-server-buddy-py", "manifests", "user_paths.json");
+
+        public string CustomServersPath => AppPaths.CustomServersPath;
+        public string UserPathsPath => AppPaths.UserPathsPath;
+
+        private static void MigrateLegacyFile(string? oldPath, string newPath)
+        {
+            if (string.IsNullOrWhiteSpace(oldPath) || !File.Exists(oldPath) || File.Exists(newPath)) return;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
+            File.Copy(oldPath, newPath);
+        }
+
+        private static string? FindLegacyCustomServersPath()
+        {
+            var dir = AppDomain.CurrentDomain.BaseDirectory;
+            while (!string.IsNullOrEmpty(dir))
+            {
+                var candidate = Path.Combine(dir, "custom_servers.json");
+                if (File.Exists(candidate)) return candidate;
+                dir = Path.GetDirectoryName(dir);
+            }
+
+            return null;
+        }
 
         public async Task<List<ServerInfo>> FetchDedicatedServersAsync()
         {
@@ -138,20 +142,21 @@ namespace SteamServerBuddy.Services
                 servers = JsonConvert.DeserializeObject<List<ServerInfo>>(json) ?? new List<ServerInfo>();
             }
 
-            // Priority: 1. Exe name
-            var name = FindServerName(installPath);
+            var metadata = await GetAppMetadataAsync(appId);
+            var name = metadata?.Name;
+
+            // Priority: 1. Steam metadata, 2. Exe/folder fallback
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = FindServerName(installPath);
+            }
 
             // 2. Steam API
             if (string.IsNullOrEmpty(name) || name.Contains("Server"))
             {
                 try
                 {
-                    var response = await _client.GetStringAsync($"https://store.steampowered.com/api/appdetails?appids={appId}");
-                    var data = JObject.Parse(response);
-                    if (data[appId] != null && data[appId]["success"]?.Value<bool>() == true)
-                    {
-                        name = data[appId]["data"]["name"].ToString();
-                    }
+                    name = await GetAppNameAsync(appId);
                 }
                 catch { }
             }
@@ -163,16 +168,177 @@ namespace SteamServerBuddy.Services
                 name = !string.IsNullOrEmpty(folderName) ? folderName : $"Server {appId}";
             }
 
-            servers.Add(new ServerInfo
+            var info = new ServerInfo
             {
                 AppId = appId,
                 Name = name,
                 InstallPath = installPath,
                 IsInstalled = true
-            });
+            };
+
+            ApplyMetadata(info, metadata);
+            servers.Add(info);
 
             var outputJson = JsonConvert.SerializeObject(servers, Formatting.Indented);
+            Directory.CreateDirectory(Path.GetDirectoryName(CustomServersPath)!);
             await File.WriteAllTextAsync(CustomServersPath, outputJson);
+        }
+
+        public async Task AddCustomServerAsync(ServerInfo info)
+        {
+            var servers = new List<ServerInfo>();
+            if (File.Exists(CustomServersPath))
+            {
+                var json = await File.ReadAllTextAsync(CustomServersPath);
+                servers = JsonConvert.DeserializeObject<List<ServerInfo>>(json) ?? new List<ServerInfo>();
+            }
+
+            var index = servers.FindIndex(s => s.AppId == info.AppId);
+            if (index >= 0) servers[index] = info;
+            else servers.Add(info);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(CustomServersPath)!);
+            await File.WriteAllTextAsync(CustomServersPath, JsonConvert.SerializeObject(servers, Formatting.Indented));
+        }
+
+        public async Task<SteamAppMetadata?> GetAppMetadataAsync(string appId)
+        {
+            if (string.IsNullOrWhiteSpace(appId) || !appId.All(char.IsDigit)) return null;
+
+            try
+            {
+                var response = await _client.GetStringAsync($"https://store.steampowered.com/api/appdetails?appids={appId}");
+                var root = JObject.Parse(response);
+                var app = root[appId];
+                if (app?["success"]?.Value<bool>() != true) return null;
+
+                var data = app["data"];
+                if (data == null) return null;
+
+                var tags = new List<string>();
+                foreach (var genre in data["genres"]?.Children<JObject>() ?? Enumerable.Empty<JObject>())
+                {
+                    var desc = genre["description"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(desc)) tags.Add(desc);
+                }
+
+                foreach (var category in data["categories"]?.Children<JObject>() ?? Enumerable.Empty<JObject>())
+                {
+                    var desc = category["description"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(desc)) tags.Add(desc);
+                }
+
+                return new SteamAppMetadata
+                {
+                    AppId = appId,
+                    Name = data["name"]?.ToString() ?? $"App {appId}",
+                    Type = data["type"]?.ToString() ?? "",
+                    HeaderImageUrl = data["header_image"]?.ToString() ?? $"https://cdn.cloudflare.steamstatic.com/steam/apps/{appId}/header.jpg",
+                    CapsuleImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{appId}/capsule_616x353.jpg",
+                    SteamDbUrl = $"https://steamdb.info/app/{appId}/",
+                    SteamStoreUrl = $"https://store.steampowered.com/app/{appId}/",
+                    Tags = tags.Distinct(StringComparer.OrdinalIgnoreCase).Take(12).ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                Globals.Diagnostics.Error($"Steam metadata lookup failed for {appId}", ex);
+                return null;
+            }
+        }
+
+        public async Task<List<SteamDedicatedServerCatalogItem>> FetchDedicatedServerCatalogAsync()
+        {
+            await Task.CompletedTask;
+            return GetKnownDedicatedServers()
+                .OrderBy(item => item.Name)
+                .ToList();
+        }
+
+        private static List<SteamDedicatedServerCatalogItem> GetKnownDedicatedServers()
+        {
+            return new List<SteamDedicatedServerCatalogItem>
+            {
+                new() { AppId = "294420", Name = "7 Days to Die Dedicated Server" },
+                new() { AppId = "376030", Name = "ARK: Survival Evolved Dedicated Server" },
+                new() { AppId = "445400", Name = "ARK: Survival of the Fittest Dedicated Server" },
+                new() { AppId = "2430930", Name = "ARK: Survival Ascended Dedicated Server" },
+                new() { AppId = "33905", Name = "ARMA 2 Dedicated Server" },
+                new() { AppId = "33935", Name = "ARMA 2: Operation Arrowhead Dedicated Server" },
+                new() { AppId = "233780", Name = "Arma 3 Dedicated Server" },
+                new() { AppId = "346680", Name = "Black Mesa: Deathmatch Dedicated Server" },
+                new() { AppId = "228780", Name = "Blade Symphony Dedicated Server" },
+                new() { AppId = "332850", Name = "BlazeRush Dedicated Server" },
+                new() { AppId = "346330", Name = "BrainBread 2 Dedicated Server" },
+                new() { AppId = "72780", Name = "Brink Dedicated Server" },
+                new() { AppId = "42750", Name = "Call of Duty: Modern Warfare 3 Dedicated Server" },
+                new() { AppId = "667230", Name = "Capsa Dedicated Server" },
+                new() { AppId = "258680", Name = "Chivalry: Deadliest Warrior Dedicated Server" },
+                new() { AppId = "220070", Name = "Chivalry: Medieval Warfare Dedicated Server" },
+                new() { AppId = "443030", Name = "Conan Exiles Dedicated Server" },
+                new() { AppId = "238430", Name = "Contagion Dedicated Server" },
+                new() { AppId = "90", Name = "Counter-Strike 1.6 Dedicated Server" },
+                new() { AppId = "90", Name = "Counter-Strike: Condition Zero Dedicated Server" },
+                new() { AppId = "740", Name = "Counter-Strike: Global Offensive Dedicated Server" },
+                new() { AppId = "730", Name = "Counter-Strike 2 Dedicated Server" },
+                new() { AppId = "232330", Name = "Counter-Strike: Source Dedicated Server" },
+                new() { AppId = "343050", Name = "Don't Starve Together Dedicated Server" },
+                new() { AppId = "2278520", Name = "Enshrouded Dedicated Server" },
+                new() { AppId = "295230", Name = "Fistful of Frags Dedicated Server" },
+                new() { AppId = "2915550", Name = "FOUNDRY Dedicated Server" },
+                new() { AppId = "4020", Name = "Garry's Mod Dedicated Server" },
+                new() { AppId = "5", Name = "Half-Life Dedicated Server" },
+                new() { AppId = "232370", Name = "Half-Life 2: Deathmatch Dedicated Server" },
+                new() { AppId = "255470", Name = "Half-Life Deathmatch: Source Dedicated Server" },
+                new() { AppId = "90", Name = "Half-Life: Opposing Force Dedicated Server" },
+                new() { AppId = "55280", Name = "Homefront Dedicated Server" },
+                new() { AppId = "405100", Name = "Hurtworld Dedicated Server" },
+                new() { AppId = "237410", Name = "Insurgency Dedicated Server" },
+                new() { AppId = "17705", Name = "Insurgency: Modern Infantry Combat Dedicated Server" },
+                new() { AppId = "581330", Name = "Insurgency: Sandstorm Dedicated Server" },
+                new() { AppId = "2181210", Name = "JBMod Dedicated Server" },
+                new() { AppId = "261140", Name = "Just Cause 2: Multiplayer Dedicated Server" },
+                new() { AppId = "1273", Name = "Killing Floor Beta Dedicated Server" },
+                new() { AppId = "215350", Name = "Killing Floor Dedicated Server" },
+                new() { AppId = "232130", Name = "Killing Floor 2 Dedicated Server" },
+                new() { AppId = "222860", Name = "Left 4 Dead 2 Dedicated Server" },
+                new() { AppId = "3796810", Name = "Nightingale Dedicated Server" },
+                new() { AppId = "2394010", Name = "Palworld Dedicated Server" },
+                new() { AppId = "17575", Name = "Pirates, Vikings, and Knights II Dedicated Server" },
+                new() { AppId = "4019830", Name = "RuneScape Dragonwilds: Dedicated Server" },
+                new() { AppId = "258550", Name = "Rust Dedicated Server" },
+                new() { AppId = "1690800", Name = "Satisfactory Dedicated Server" },
+                new() { AppId = "41080", Name = "Serious Sam 3 Dedicated Server" },
+                new() { AppId = "403240", Name = "Squad Dedicated Server" },
+                new() { AppId = "211820", Name = "Starbound Dedicated Server" },
+                new() { AppId = "205", Name = "Source Dedicated Server" },
+                new() { AppId = "310", Name = "Source 2007 Dedicated Server" },
+                new() { AppId = "244310", Name = "Source SDK Base 2013 Dedicated Server" },
+                new() { AppId = "276060", Name = "Sven Co-op Dedicated Server" },
+                new() { AppId = "232250", Name = "Team Fortress 2 Dedicated Server" },
+                new() { AppId = "90", Name = "Team Fortress Classic Dedicated Server" },
+                new() { AppId = "105600", Name = "Terraria Dedicated Server" },
+                new() { AppId = "2403", Name = "The Ship Dedicated Server" },
+                new() { AppId = "556450", Name = "The Forest Dedicated Server" },
+                new() { AppId = "439660", Name = "Tower Unite Dedicated Server" },
+                new() { AppId = "1110390", Name = "Unturned Dedicated Server" },
+                new() { AppId = "896660", Name = "Valheim Dedicated Server" },
+                new() { AppId = "1829350", Name = "V Rising Dedicated Server" },
+                new() { AppId = "17505", Name = "Zombie Panic! Source Dedicated Server" }
+            };
+        }
+
+        public static void ApplyMetadata(ServerInfo info, SteamAppMetadata? metadata)
+        {
+            if (metadata == null) return;
+
+            info.Name = string.IsNullOrWhiteSpace(metadata.Name) ? info.Name : metadata.Name;
+            info.SteamType = metadata.Type;
+            info.HeaderImageUrl = metadata.HeaderImageUrl;
+            info.CapsuleImageUrl = metadata.CapsuleImageUrl;
+            info.SteamDbUrl = metadata.SteamDbUrl;
+            info.SteamStoreUrl = metadata.SteamStoreUrl;
+            info.Tags = metadata.Tags;
         }
 
         public async Task RemoveCustomServerAsync(string appId)
@@ -188,6 +354,7 @@ namespace SteamServerBuddy.Services
                 {
                     servers.Remove(serverToRemove);
                     var outputJson = JsonConvert.SerializeObject(servers, Formatting.Indented);
+                    Directory.CreateDirectory(Path.GetDirectoryName(CustomServersPath)!);
                     await File.WriteAllTextAsync(CustomServersPath, outputJson);
                     return; // Found and removed
                 }
@@ -210,6 +377,7 @@ namespace SteamServerBuddy.Services
                 {
                     userPaths.Remove(appId);
                     var outputJson = JsonConvert.SerializeObject(userPaths, Formatting.Indented);
+                    Directory.CreateDirectory(Path.GetDirectoryName(UserPathsPath)!);
                     await File.WriteAllTextAsync(UserPathsPath, outputJson);
                 }
             }
@@ -239,6 +407,7 @@ namespace SteamServerBuddy.Services
                 servers.Add(info);
             }
             
+            Directory.CreateDirectory(Path.GetDirectoryName(CustomServersPath)!);
             await File.WriteAllTextAsync(CustomServersPath, JsonConvert.SerializeObject(servers, Formatting.Indented));
         }
 

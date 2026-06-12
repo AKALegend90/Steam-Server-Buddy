@@ -1,1 +1,0 @@
-﻿{"name":"Valheim","appid":896660,"save_path_win":"%USERPROFILE%\\AppData\\LocalLow\\IronGate\\Valheim\\worlds","save_path_linux":"~/.config/unity3d/IronGate/Valheim/worlds","default_ports":[2456,2457,2458],"launch_args":["-name","MyServer","-port","2456","-world","Dedicated","-password","secret"]}

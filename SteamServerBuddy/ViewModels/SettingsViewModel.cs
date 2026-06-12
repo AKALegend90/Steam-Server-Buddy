@@ -35,8 +35,8 @@ namespace SteamServerBuddy.ViewModels
         {
             SaveCommand = new AsyncRelayCommand(SaveAsync);
             OpenSettingsFolderCommand = new RelayCommand(OpenSettingsFolder);
-            OpenFileLocationCommand = new RelayCommand<ConfigGroupViewModel>(OpenFileLocation);
-            OpenInNotepadCommand = new RelayCommand<ConfigGroupViewModel>(OpenInNotepad);
+            OpenFileLocationCommand = new AsyncRelayCommand<ConfigGroupViewModel>(OpenFileLocationAsync);
+            OpenInNotepadCommand = new AsyncRelayCommand<ConfigGroupViewModel>(OpenInNotepadAsync);
         }
 
         public IAsyncRelayCommand SaveCommand { get; }
@@ -51,6 +51,7 @@ namespace SteamServerBuddy.ViewModels
             _serverPath = serverPath;
             IsBusy = true;
             StatusMessage = "Looking for configs...";
+            Groups.Clear();
 
             _schema = await Globals.Config.LoadSchemaAsync(appId, serverPath);
             if (_schema == null || _schema.ConfigFiles == null || !_schema.ConfigFiles.Any())
@@ -107,48 +108,97 @@ namespace SteamServerBuddy.ViewModels
 
         private void OpenSettingsFolder()
         {
-            if (string.IsNullOrEmpty(_serverPath) || !System.IO.Directory.Exists(_serverPath)) return;
-            try { System.Diagnostics.Process.Start("explorer.exe", _serverPath); } catch { }
-        }
-
-        private void OpenFileLocation(ConfigGroupViewModel group)
-        {
-            if (group == null || string.IsNullOrEmpty(group.FullPath)) return;
-            if (!System.IO.File.Exists(group.FullPath))
+            if (string.IsNullOrEmpty(_serverPath))
             {
-                System.Windows.MessageBox.Show(
-                    $"The config file does not exist yet:\n{group.FullPath}\n\nPlease start the server at least once to generate this file.",
-                    "File Not Found",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
+                StatusMessage = "No server folder is loaded.";
                 return;
             }
+
+            try
+            {
+                System.IO.Directory.CreateDirectory(_serverPath);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = _serverPath,
+                    UseShellExecute = true
+                });
+                StatusMessage = "Opened server folder.";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Open folder failed: {ex.Message}";
+            }
+        }
+
+        private async Task OpenFileLocationAsync(ConfigGroupViewModel group)
+        {
+            if (group == null || string.IsNullOrEmpty(group.FullPath)) return;
+            if (!await EnsureConfigFileExistsAsync(group)) return;
+
             try 
             { 
                 var cleanPath = System.IO.Path.GetFullPath(group.FullPath);
-                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{cleanPath}\""); 
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"/select,\"{cleanPath}\"",
+                    UseShellExecute = true
+                });
+                StatusMessage = $"Showing {group.FileName}.";
             } 
-            catch { }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Show file failed: {ex.Message}";
+            }
         }
 
-        private void OpenInNotepad(ConfigGroupViewModel group)
+        private async Task OpenInNotepadAsync(ConfigGroupViewModel group)
         {
             if (group == null || string.IsNullOrEmpty(group.FullPath)) return;
-            if (!System.IO.File.Exists(group.FullPath))
-            {
-                System.Windows.MessageBox.Show(
-                    $"The config file does not exist yet:\n{group.FullPath}\n\nPlease start the server at least once to generate this file.",
-                    "File Not Found",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-                return;
-            }
+            if (!await EnsureConfigFileExistsAsync(group)) return;
+
             try 
             { 
                 var cleanPath = System.IO.Path.GetFullPath(group.FullPath);
-                System.Diagnostics.Process.Start("notepad.exe", cleanPath); 
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "notepad.exe",
+                    Arguments = $"\"{cleanPath}\"",
+                    UseShellExecute = true
+                });
+                StatusMessage = $"Opened {group.FileName}.";
             } 
-            catch { }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Edit raw failed: {ex.Message}";
+            }
+        }
+
+        private async Task<bool> EnsureConfigFileExistsAsync(ConfigGroupViewModel group)
+        {
+            if (group == null || string.IsNullOrWhiteSpace(group.FullPath)) return false;
+
+            try
+            {
+                if (!System.IO.File.Exists(group.FullPath))
+                {
+                    StatusMessage = $"Creating {group.FileName}...";
+                    await SaveAsync();
+                }
+
+                if (!System.IO.File.Exists(group.FullPath))
+                {
+                    StatusMessage = $"Could not create {group.FileName}. Try Save Settings first.";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Could not prepare {group.FileName}: {ex.Message}";
+                return false;
+            }
         }
     }
 

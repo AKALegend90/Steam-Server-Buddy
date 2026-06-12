@@ -1,39 +1,34 @@
-﻿using System;
-using System.IO;
-using System.Windows;
-using Newtonsoft.Json;
-using SteamServerBuddy.Models;
-using SteamServerBuddy.Services;
+﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
 using SteamServerBuddy.ViewModels;
+using SteamServerBuddy.Views;
 
 namespace SteamServerBuddy
 {
     public partial class App : Application
     {
-        private static bool _isDisplayingError = false;
-
-        protected override void OnStartup(StartupEventArgs e)
+        public override void Initialize()
         {
-            base.OnStartup(e);
+            AvaloniaXamlLoader.Load(this);
+        }
 
-            // Global Exception Handler
-            this.DispatcherUnhandledException += (s, args) =>
+        public override void OnFrameworkInitializationCompleted()
+        {
+            Globals.Theme.Apply(Globals.AppSettings.GetTheme());
+
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                if (_isDisplayingError) return;
-                _isDisplayingError = true;
-                try 
+                desktop.MainWindow = new MainWindow
                 {
-                    string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crash.log");
-                    File.AppendAllText(logPath, $"{DateTime.Now}: {args.Exception}\n\n");
-                    MessageBox.Show($"Application error: {args.Exception.Message}", "Error");
-                }
-                catch { }
-                finally { _isDisplayingError = false; }
-                args.Handled = true; // Prevent crash if possible
-            };
+                    DataContext = new MainViewModel()
+                };
 
-            var mainWindow = new MainWindow();
-            mainWindow.Show();
+                Globals.Automation.Start();
+                desktop.ShutdownRequested += (_, _) => Globals.Automation.Dispose();
+            }
+
+            base.OnFrameworkInitializationCompleted();
         }
     }
 }
