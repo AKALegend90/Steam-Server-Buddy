@@ -13,6 +13,17 @@ namespace SteamServerBuddy.Services
     public class SteamWebAPIService
     {
         private static readonly HttpClient _client = new HttpClient();
+        private static readonly Dictionary<string, string> ArtworkAppAliases = new()
+        {
+            ["294420"] = "251570",   // 7 Days to Die
+            ["2278520"] = "1203620", // Enshrouded
+            ["2394010"] = "1623730", // Palworld
+            ["4019830"] = "1374490", // RuneScape Dragonwilds
+            ["1690800"] = "526870",  // Satisfactory
+            ["896660"] = "892970",   // Valheim
+            ["1829350"] = "1604030", // V Rising
+            ["258550"] = "252490"    // Rust
+        };
         
         public SteamWebAPIService()
         {
@@ -131,6 +142,7 @@ namespace SteamServerBuddy.Services
                 }
             }
 
+            await RepairMissingMetadataAsync(results);
             return results;
         }
         public async Task AddCustomServerAsync(string appId, string installPath)
@@ -210,10 +222,11 @@ namespace SteamServerBuddy.Services
                 var response = await _client.GetStringAsync($"https://store.steampowered.com/api/appdetails?appids={appId}");
                 var root = JObject.Parse(response);
                 var app = root[appId];
-                if (app?["success"]?.Value<bool>() != true) return null;
+                if (app?["success"]?.Value<bool>() != true) return BuildFallbackMetadata(appId);
 
                 var data = app["data"];
-                if (data == null) return null;
+                if (data == null) return BuildFallbackMetadata(appId);
+                var artworkAppId = ResolveArtworkAppId(appId);
 
                 var tags = new List<string>();
                 foreach (var genre in data["genres"]?.Children<JObject>() ?? Enumerable.Empty<JObject>())
@@ -233,8 +246,8 @@ namespace SteamServerBuddy.Services
                     AppId = appId,
                     Name = data["name"]?.ToString() ?? $"App {appId}",
                     Type = data["type"]?.ToString() ?? "",
-                    HeaderImageUrl = data["header_image"]?.ToString() ?? $"https://cdn.cloudflare.steamstatic.com/steam/apps/{appId}/header.jpg",
-                    CapsuleImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{appId}/capsule_616x353.jpg",
+                    HeaderImageUrl = data["header_image"]?.ToString() ?? $"https://cdn.cloudflare.steamstatic.com/steam/apps/{artworkAppId}/header.jpg",
+                    CapsuleImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{artworkAppId}/capsule_616x353.jpg",
                     SteamDbUrl = $"https://steamdb.info/app/{appId}/",
                     SteamStoreUrl = $"https://store.steampowered.com/app/{appId}/",
                     Tags = tags.Distinct(StringComparer.OrdinalIgnoreCase).Take(12).ToList()
@@ -243,7 +256,7 @@ namespace SteamServerBuddy.Services
             catch (Exception ex)
             {
                 Globals.Diagnostics.Error($"Steam metadata lookup failed for {appId}", ex);
-                return null;
+                return BuildFallbackMetadata(appId);
             }
         }
 
@@ -326,6 +339,82 @@ namespace SteamServerBuddy.Services
                 new() { AppId = "1829350", Name = "V Rising Dedicated Server" },
                 new() { AppId = "17505", Name = "Zombie Panic! Source Dedicated Server" }
             };
+        }
+
+        private async Task RepairMissingMetadataAsync(List<ServerInfo> servers)
+        {
+            foreach (var server in servers)
+            {
+                if (server == null || string.IsNullOrWhiteSpace(server.AppId)) continue;
+                if (!NeedsMetadataRepair(server)) continue;
+
+                var before = JsonConvert.SerializeObject(server);
+                var metadata = await GetAppMetadataAsync(server.AppId);
+                ApplyMetadata(server, metadata);
+
+                if (string.IsNullOrWhiteSpace(server.Name) || IsFallbackName(server.Name, server.AppId))
+                {
+                    server.Name = GetKnownDedicatedServerName(server.AppId) ?? $"App {server.AppId}";
+                }
+
+                if (string.IsNullOrWhiteSpace(server.HeaderImageUrl))
+                {
+                    var artworkAppId = ResolveArtworkAppId(server.AppId);
+                    server.HeaderImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{artworkAppId}/header.jpg";
+                    server.CapsuleImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{artworkAppId}/capsule_616x353.jpg";
+                }
+
+                var after = JsonConvert.SerializeObject(server);
+                if (!string.Equals(before, after, StringComparison.Ordinal))
+                {
+                    await UpdateServerInfoAsync(server);
+                }
+            }
+        }
+
+        private static bool NeedsMetadataRepair(ServerInfo server)
+        {
+            return string.IsNullOrWhiteSpace(server.Name)
+                || IsFallbackName(server.Name, server.AppId)
+                || string.IsNullOrWhiteSpace(server.HeaderImageUrl)
+                || string.IsNullOrWhiteSpace(server.SteamDbUrl);
+        }
+
+        private static bool IsFallbackName(string name, string appId)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return true;
+            return name.Equals($"App {appId}", StringComparison.OrdinalIgnoreCase)
+                || name.Equals($"AppID: {appId}", StringComparison.OrdinalIgnoreCase)
+                || name.Equals($"Server {appId}", StringComparison.OrdinalIgnoreCase)
+                || name.Equals(appId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static SteamAppMetadata BuildFallbackMetadata(string appId)
+        {
+            var artworkAppId = ResolveArtworkAppId(appId);
+            return new SteamAppMetadata
+            {
+                AppId = appId,
+                Name = GetKnownDedicatedServerName(appId) ?? $"App {appId}",
+                Type = "game",
+                HeaderImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{artworkAppId}/header.jpg",
+                CapsuleImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{artworkAppId}/capsule_616x353.jpg",
+                SteamDbUrl = $"https://steamdb.info/app/{appId}/",
+                SteamStoreUrl = $"https://store.steampowered.com/app/{artworkAppId}/",
+                Tags = new List<string> { "Dedicated Server" }
+            };
+        }
+
+        private static string ResolveArtworkAppId(string appId)
+        {
+            return ArtworkAppAliases.TryGetValue(appId, out var artworkAppId) ? artworkAppId : appId;
+        }
+
+        private static string? GetKnownDedicatedServerName(string appId)
+        {
+            return GetKnownDedicatedServers()
+                .FirstOrDefault(server => server.AppId.Equals(appId, StringComparison.OrdinalIgnoreCase))
+                ?.Name;
         }
 
         public static void ApplyMetadata(ServerInfo info, SteamAppMetadata? metadata)

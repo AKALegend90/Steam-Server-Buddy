@@ -96,57 +96,46 @@ namespace SteamServerBuddy.ViewModels
 
         public async Task LoadImageAsync()
         {
-            // 1. Try persisted Steam/store image, then Steam CDN fallback.
-            string url = !string.IsNullOrWhiteSpace(_info.HeaderImageUrl)
-                ? _info.HeaderImageUrl
-                : $"https://cdn.cloudflare.steamstatic.com/steam/apps/{AppId}/header.jpg";
-            bool valid = await CheckUrlExists(url);
-
-            if (valid)
+            var imageUrls = new[]
             {
-                ImageSource = await LoadBitmapAsync(url);
+                _info.HeaderImageUrl,
+                _info.CapsuleImageUrl,
+                $"https://cdn.cloudflare.steamstatic.com/steam/apps/{AppId}/header.jpg"
             }
-            else
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var url in imageUrls)
             {
-                // 2. Fallback to Local Executable Icon
-                string exePath = null;
-
-                // Find the executable on a background thread (IO heavy)
-                await Task.Run(() => 
+                var bitmap = await LoadBitmapAsync(url);
+                if (bitmap != null)
                 {
-                    try 
-                    {
-                        exePath = FindServerExecutable(InstallPath);
-                        System.Diagnostics.Debug.WriteLine($"[IconFallback] AppId={AppId} FoundExe={exePath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[IconFallback] Error finding exe for {AppId}: {ex.Message}");
-                    }
-                });
-
-                if (!string.IsNullOrEmpty(exePath))
-                {
-                   // Icon extraction removed for cross-platform compatibility
-                   // TODO: Implement cross-platform icon loading (e.g. from resources or generic icon)
+                    ImageSource = bitmap;
+                    return;
                 }
             }
-        }
 
-        private async Task<bool> CheckUrlExists(string url)
-        {
-            try
+            // Fallback to Local Executable Icon
+            string exePath = null;
+
+            // Find the executable on a background thread (IO heavy)
+            await Task.Run(() => 
             {
-                using (var client = new HttpClient())
+                try 
                 {
-                    client.Timeout = TimeSpan.FromSeconds(2);
-                    var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-                    return response.IsSuccessStatusCode;
+                    exePath = FindServerExecutable(InstallPath);
+                    System.Diagnostics.Debug.WriteLine($"[IconFallback] AppId={AppId} FoundExe={exePath}");
                 }
-            }
-            catch
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[IconFallback] Error finding exe for {AppId}: {ex.Message}");
+                }
+            });
+
+            if (!string.IsNullOrEmpty(exePath))
             {
-                return false;
+               // Icon extraction removed for cross-platform compatibility
+               // TODO: Implement cross-platform icon loading (e.g. from resources or generic icon)
             }
         }
 
