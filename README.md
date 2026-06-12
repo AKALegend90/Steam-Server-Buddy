@@ -1,46 +1,85 @@
 # Steam Server Buddy
 
-**Steam Server Buddy** is a powerful, user-friendly tool designed to simplify the management of dedicated game servers. Whether you are hosting Palworld, Enshrouded, or Valheim, this app handles the heavy lifting so you can focus on gaming.
+**Steam Server Buddy** is a Windows desktop app for installing, launching, and managing Steam dedicated servers with SteamCMD.
 
-## 🚀 Key Features
+This repository is now on **V2**. The latest release is **v2.0.1**.
 
-*   **1-Click Install & Update**: installs SteamCMD and game servers automatically.
-*   **Process Management**: Start, Stop, and Restart servers with a friendly UI.
-*   **Performance Monitoring**: Real-time CPU and RAM usage tracking for each server.
-*   **Auto-Restart**: Automatically detecting crashes and restarting your server to keep it online.
-*   **Discord Integration**: Get notified instantly on Discord when your server starts, stops, or crashes.
-*   **Backup System**: Easy one-click backups and restores for your server data.
-*   **SteamCMD Handling**: Automatically downloads and updates SteamCMD for you.
+## Download
 
-## 📥 Download & Installation
+1. Open the [Releases page](../../releases).
+2. Download the latest `SteamServerBuddy-v2.0.1-win-x64.zip`.
+3. Extract the zip.
+4. Run `SteamServerBuddy.exe`.
 
-1.  Go to the [**Releases Page**](../../releases) on this repository.
-2.  Download the latest ZIP file (e.g., `SteamServerBuddy_v1_Release.zip`).
-3.  Extract the files to a folder on your computer.
-4.  Run `SteamServerBuddy.exe`.
+On first use, Steam Server Buddy can set up SteamCMD for you from inside the app.
 
-*Note: On the first run, the app will take a moment to download SteamCMD.*
+## V2 Features
 
-## 🎮 Supported Games
+- **SteamCMD setup and repair**: Download, check, and fix SteamCMD from the sidebar.
+- **Install dedicated servers**: Add a server by Steam AppID or choose one from the built-in Server Catalog.
+- **Built-in Server Catalog**: Search a local list of known Steam dedicated server AppIDs without opening SteamDB.
+- **Steam artwork and metadata**: Shows server names, Steam artwork, SteamDB links, Steam Store links, and install commands when available.
+- **Installed server library**: View installed/imported servers, open folders, remove entries, and jump into details.
+- **Server controls**: Start, stop, restart, update, validate, and open server folders.
+- **Live console area**: Shows app/server log output when a readable log stream is available.
+- **Configuration editor**: Detects supported server setting files and lets you edit common config values in the app.
+- **Raw config editing**: Open and edit raw config files when the app cannot map every setting.
+- **Port detection helper**: Tries to detect server ports from config files.
+- **Manual port forwarding tutorial**: Includes an in-app guide for router port forwarding, Windows Firewall, local IPv4 address, and CGNAT checks.
+- **Backups**: Create and manage backups for server files.
+- **Automation options**: Auto restart after crash, auto update, scheduled restart, and auto backup.
+- **Import existing servers**: Add already-installed server folders to the app.
+- **Themes**: Switch between dark and light themes.
+- **Discord notifications**: Optional webhook notifications for server events.
 
-*   **Palworld**
-*   **Enshrouded**
-*   **Valheim**
-*   **V Rising**
-*   *(More can be added via custom configuration!)*
+## Server Catalog
 
-## 🛠️ How to Use
+The catalog is an offline built-in list of Steam dedicated server tools. It does not scrape SteamDB live.
 
-1.  **Add a Server**: Go to the "Add Server" tab and pick your game.
-2.  **Install**: Click the "Install/Update" button to download the server files.
-3.  **Run**: Click "Start" to launch your server.
-4.  **Configure**: Use the "Settings" button to enable Auto-Restart, Backups, or Discord Webhooks.
+This makes the app more reliable because SteamDB does not provide a simple public API for searching every dedicated server from inside the app. If a server is missing, it can still be added manually with its Steam AppID.
 
-## 🐛 Known Issues & Feedback
-As this is the first release (v1.0.0), you might encounter some bugs or unexpected behavior.
+Examples included in the catalog:
 
-If you find an issue, please feel free to report it in the **[Issues](../../issues)** tab. Your feedback is incredibly helpful and will help improve future versions!
+- Palworld Dedicated Server - `2394010`
+- Enshrouded Dedicated Server - `2278520`
+- RuneScape Dragonwilds: Dedicated Server - `4019830`
+- Satisfactory Dedicated Server - `1690800`
+- Valheim Dedicated Server - `896660`
+- V Rising Dedicated Server - `1829350`
+- Rust Dedicated Server - `258550`
+- 7 Days to Die Dedicated Server - `294420`
 
-## 🤝 Support
+## Basic Use
 
-Created by **[AKALegend90](https://github.com/AKALegend90)**.
+1. Open **Server Catalog** or **Install Server**.
+2. Select a dedicated server or enter a Steam AppID.
+3. Click **Lookup** if using an AppID manually.
+4. Choose the install folder.
+5. Click **Install**.
+6. Open **Installed Servers**.
+7. Click **Details** to start, stop, update, validate, edit configs, or create backups.
+
+## Port Forwarding
+
+Automatic router port forwarding was removed in V2 because router UPnP/NAT-PMP support is inconsistent and often disabled.
+
+Use the **Tutorial** tab in the app for manual setup:
+
+- Find the server port in the Details page.
+- Add a Windows Firewall inbound rule for the server port.
+- Open your router admin page.
+- Forward the server port to this PC's local IPv4 address.
+- Use UDP unless the game's documentation says TCP is also needed.
+- If port forwarding still fails, check whether your ISP uses CGNAT.
+
+## Notes
+
+- Player count display was removed because many dedicated servers do not answer the same query protocol reliably.
+- Some Steam dedicated server AppIDs do not have their own artwork. V2 uses known game artwork aliases where possible.
+- The app stores its data under `%APPDATA%\SteamServerBuddy`.
+
+## Feedback
+
+Please report bugs or feature requests in the [Issues tab](../../issues).
+
+Created by [AKALegend90](https://github.com/AKALegend90).
