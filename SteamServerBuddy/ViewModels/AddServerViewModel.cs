@@ -78,8 +78,8 @@ namespace SteamServerBuddy.ViewModels
             InstallCommand = new AsyncRelayCommand(InstallNewAsync);
             BrowseCommand = new AsyncRelayCommand(BrowseFolderAsync);
             BrowseInstallFolderCommand = new AsyncRelayCommand(BrowseInstallFolderAsync);
-            OpenSteamDbCommand = new RelayCommand(() => OpenUrl(SteamDbUrl));
-            OpenSteamStoreCommand = new RelayCommand(() => OpenUrl(SteamStoreUrl));
+            OpenSteamDbCommand = new RelayCommand(OpenSteamDb);
+            OpenSteamStoreCommand = new RelayCommand(OpenSteamStore);
             CopyCommandCommand = new RelayCommand(CopyCommand);
         }
 
@@ -331,10 +331,42 @@ namespace SteamServerBuddy.ViewModels
             }
         }
 
-        private static void OpenUrl(string url)
+        private void OpenSteamDb()
+        {
+            var url = !string.IsNullOrWhiteSpace(SteamDbUrl)
+                ? SteamDbUrl
+                : !string.IsNullOrWhiteSpace(AppId) && AppId.All(char.IsDigit)
+                    ? $"https://steamdb.info/app/{AppId}/"
+                    : "https://steamdb.info/";
+
+            OpenUrl(url, "SteamDB");
+        }
+
+        private void OpenSteamStore()
+        {
+            var url = !string.IsNullOrWhiteSpace(SteamStoreUrl)
+                ? SteamStoreUrl
+                : !string.IsNullOrWhiteSpace(AppId) && AppId.All(char.IsDigit)
+                    ? $"https://store.steampowered.com/app/{AppId}/"
+                    : "https://store.steampowered.com/";
+
+            OpenUrl(url, "Steam store");
+        }
+
+        private void OpenUrl(string url, string label)
         {
             if (string.IsNullOrWhiteSpace(url)) return;
-            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+
+            try
+            {
+                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                StatusMessage = $"Opened {label}.";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Could not open {label}: {ex.Message}";
+                Globals.Diagnostics.Error($"Could not open {label} URL: {url}", ex);
+            }
         }
 
         private async void CopyCommand()
