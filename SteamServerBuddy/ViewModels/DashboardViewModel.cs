@@ -187,7 +187,7 @@ namespace SteamServerBuddy.ViewModels
             RefreshStatus();
         }
 
-        public IRelayCommand StartCommand => new RelayCommand(Start);
+        public IAsyncRelayCommand StartCommand => new AsyncRelayCommand(Start);
         public IRelayCommand StopCommand => new RelayCommand(Stop);
         public IRelayCommand RestartCommand => new RelayCommand(Restart);
         public IAsyncRelayCommand DetailsCommand => new AsyncRelayCommand(OpenDetailsAsync);
@@ -219,12 +219,17 @@ namespace SteamServerBuddy.ViewModels
             }
         }
 
-        private void Start()
+        private async Task Start()
         {
             var exe = Globals.Executables.FindServerExecutable(Info.InstallPath);
             if (string.IsNullOrWhiteSpace(exe))
             {
                 _activity($"Could not find executable for {Name}.");
+                return;
+            }
+
+            if (!await Globals.DirectX.EnsureLegacyRuntimeAsync(_activity))
+            {
                 return;
             }
 
@@ -246,7 +251,7 @@ namespace SteamServerBuddy.ViewModels
             Task.Run(async () =>
             {
                 await Task.Delay(1500);
-                Avalonia.Threading.Dispatcher.UIThread.Post(Start);
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () => await Start());
             });
             _activity($"Restart requested for {Name}.");
         }

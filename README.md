@@ -2,12 +2,12 @@
 
 **Steam Server Buddy** is a Windows desktop app for installing, launching, and managing Steam dedicated servers with SteamCMD.
 
-This repository is now on **V2**. The latest release is **v2.0.1**.
+This repository is now on **V2**. The latest release is **v2.0.2**.
 
 ## Download
 
 1. Open the [Releases page](../../releases).
-2. Download the latest `SteamServerBuddy-v2.0.1-win-x64.zip`.
+2. Download the latest `SteamServerBuddy-v2.0.2-win-x64.zip`.
 3. Extract the zip.
 4. Run `SteamServerBuddy.exe`.
 
@@ -31,6 +31,7 @@ On first use, Steam Server Buddy can set up SteamCMD for you from inside the app
 - **Import existing servers**: Add already-installed server folders to the app.
 - **Themes**: Switch between dark and light themes.
 - **Discord notifications**: Optional webhook notifications for server events.
+- **DirectX Runtime helper**: Prompts to install Microsoft's DirectX End-User Runtime when a dedicated server requires it.
 
 ## Server Catalog
 
@@ -76,6 +77,7 @@ Use the **Tutorial** tab in the app for manual setup:
 
 - Player count display was removed because many dedicated servers do not answer the same query protocol reliably.
 - Some Steam dedicated server AppIDs do not have their own artwork. V2 uses known game artwork aliases where possible.
+- Some dedicated servers require Microsoft's legacy DirectX End-User Runtime. Steam Server Buddy can ask before downloading and running the official installer.
 - The app stores its data under `%APPDATA%\SteamServerBuddy`.
 
 ## Feedback

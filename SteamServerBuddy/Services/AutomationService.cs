@@ -128,6 +128,7 @@ namespace SteamServerBuddy.Services
             Task.Run(async () =>
             {
                 await Task.Delay(5000);
+                if (!await Globals.DirectX.EnsureLegacyRuntimeAsync(null, allowPrompt: false)) return;
                 Globals.ProcessManager.StartServer(server.AppId, exe, server.LaunchArguments ?? "");
             });
         }

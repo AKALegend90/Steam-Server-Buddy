@@ -16,7 +16,7 @@
             <Grid RowDefinitions="Auto, Auto, *, Auto, Auto">
                 <StackPanel Grid.Row="0" Margin="20,24,20,28" Spacing="4">
                     <TextBlock Text="Steam Server Buddy" Foreground="{DynamicResource AppTextBrush}" FontSize="17" FontWeight="Bold"/>
-                    <TextBlock Text="v2.0.1" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="12"/>
+                    <TextBlock Text="v2.0.2" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="12"/>
                 </StackPanel>
                 
                 <!-- Navigation -->

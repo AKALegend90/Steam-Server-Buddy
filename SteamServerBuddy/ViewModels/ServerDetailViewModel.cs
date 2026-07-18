@@ -210,9 +210,14 @@ namespace SteamServerBuddy.ViewModels
             }
             else
             {
-                    var exePath = Globals.Executables.FindServerExecutable(_currentServer.Info.InstallPath);
+                var exePath = Globals.Executables.FindServerExecutable(_currentServer.Info.InstallPath);
                 if (!string.IsNullOrEmpty(exePath))
                 {
+                    if (!await Globals.DirectX.EnsureLegacyRuntimeAsync(status => DetailStatus = status))
+                    {
+                        return;
+                    }
+
                     Globals.ProcessManager.StartServer(_currentServer.AppId, exePath, LaunchArguments ?? "");
                     DetailStatus = "Start requested.";
                 }

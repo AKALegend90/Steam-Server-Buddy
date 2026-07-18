@@ -86,7 +86,7 @@ namespace SteamServerBuddy.ViewModels
         }
 
         [RelayCommand]
-        public void Start()
+        public async Task Start()
         {
             if (string.IsNullOrEmpty(Info.InstallPath))
             {
@@ -108,6 +108,12 @@ namespace SteamServerBuddy.ViewModels
                     // MessageBox.Show("Could not find executable.");
                     return;
                 }
+
+                if (!await Globals.DirectX.EnsureLegacyRuntimeAsync())
+                {
+                    return;
+                }
+
                 Globals.ProcessManager.StartServer(Info.AppId, exe, Info.LaunchArguments ?? "");
                 IsRunning = true;
             } 

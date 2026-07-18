@@ -16,6 +16,7 @@ namespace SteamServerBuddy
         private static readonly Lazy<DialogService> _dialogs = new Lazy<DialogService>(() => new DialogService());
         private static readonly Lazy<AutomationService> _automation = new Lazy<AutomationService>(() => new AutomationService());
         private static readonly Lazy<AppThemeService> _theme = new Lazy<AppThemeService>(() => new AppThemeService());
+        private static readonly Lazy<DirectXRuntimeService> _directX = new Lazy<DirectXRuntimeService>(() => new DirectXRuntimeService());
 
         public static SteamWebAPIService WebAPI => _webAPI.Value;
         public static SteamCMDService SteamCMD => _steamCMD.Value;
@@ -28,6 +29,7 @@ namespace SteamServerBuddy
         public static DialogService Dialogs => _dialogs.Value;
         public static AutomationService Automation => _automation.Value;
         public static AppThemeService Theme => _theme.Value;
+        public static DirectXRuntimeService DirectX => _directX.Value;
         private static readonly Lazy<BackupService> _backups = new Lazy<BackupService>(() => new BackupService());
         public static BackupService Backups => _backups.Value;
 
