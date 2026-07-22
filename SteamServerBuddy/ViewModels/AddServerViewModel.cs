@@ -12,6 +12,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SteamServerBuddy.Services;
 
 namespace SteamServerBuddy.ViewModels
 {
@@ -201,10 +202,13 @@ namespace SteamServerBuddy.ViewModels
 
             try 
             {
-                var customId = $"custom-{DateTime.Now:yyyyMMddHHmmss}";
-                await Globals.WebAPI.AddCustomServerAsync(customId, ImportPath);
+                var detectedAppId = SteamWebAPIService.DetectInstalledServerAppId(ImportPath);
+                var importedAppId = detectedAppId ?? $"custom-{DateTime.Now:yyyyMMddHHmmss}";
+                await Globals.WebAPI.AddCustomServerAsync(importedAppId, ImportPath);
                 StatusMessage = "Success: Server imported!";
-                AddLog($"Imported {ImportPath}");
+                AddLog(detectedAppId == "2394010"
+                    ? $"Imported Palworld Dedicated Server (App ID 2394010) from {ImportPath}"
+                    : $"Imported {ImportPath}");
                 ImportPath = string.Empty;
             }
             catch (Exception ex)
@@ -272,6 +276,9 @@ namespace SteamServerBuddy.ViewModels
                     AppId = AppId,
                     Name = string.IsNullOrWhiteSpace(ServerName) ? _metadata?.Name ?? $"App {AppId}" : ServerName,
                     InstallPath = installDir,
+                    LaunchArguments = AppId == "1829350"
+                        ? "-persistentDataPath .\\save-data -logFile .\\logs\\VRisingServer.log"
+                        : "",
                     IsInstalled = true
                 };
                 Services.SteamWebAPIService.ApplyMetadata(info, _metadata);

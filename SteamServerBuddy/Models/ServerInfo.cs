@@ -73,6 +73,21 @@ namespace SteamServerBuddy.Models
         [JsonProperty("auto_backup_interval_hours")]
         public int AutoBackupIntervalHours { get; set; } = 24; // Default daily
 
+        [JsonProperty("auto_backup_interval_minutes")]
+        public int AutoBackupIntervalMinutes { get; set; } = 1440;
+
+        [JsonProperty("backup_on_startup")]
+        public bool BackupOnStartup { get; set; }
+
+        [JsonProperty("backup_on_shutdown")]
+        public bool BackupOnShutdown { get; set; }
+
+        [JsonProperty("backup_retention_days")]
+        public int BackupRetentionDays { get; set; } = 7;
+
+        [JsonProperty("backup_location")]
+        public string BackupLocation { get; set; } = "";
+
         // Auto Update
         [JsonProperty("auto_update_enabled")]
         public bool AutoUpdateEnabled { get; set; }
@@ -86,11 +101,44 @@ namespace SteamServerBuddy.Models
         [JsonProperty("auto_update_day")]
         public string AutoUpdateDay { get; set; } = "Daily"; // Daily, Monday, etc.
 
+        [JsonProperty("pin_server_version")]
+        public bool PinServerVersion { get; set; }
+
+        [JsonProperty("update_on_start_restart")]
+        public bool UpdateOnStartRestart { get; set; }
+
+        [JsonProperty("auto_update_check_interval_minutes")]
+        public int AutoUpdateCheckIntervalMinutes { get; set; } = 15;
+
         // Scheduled Restart
         [JsonProperty("scheduled_restart_enabled")]
         public bool ScheduledRestartEnabled { get; set; }
 
         [JsonProperty("scheduled_restart_interval_hours")]
         public int ScheduledRestartIntervalHours { get; set; } = 6; // Default 6 hours
+
+        [JsonProperty("scheduled_restart_time")]
+        public string ScheduledRestartTime { get; set; } = "03:00 AM";
+
+        [JsonProperty("restart_minimum_uptime_hours")]
+        public int RestartMinimumUptimeHours { get; set; } = 2;
+
+        [JsonProperty("announce_restarts")]
+        public bool AnnounceRestarts { get; set; } = true;
+
+        [JsonProperty("restart_announcement_minutes")]
+        public string RestartAnnouncementMinutes { get; set; } = "15,5,1";
+
+        [JsonProperty("validate_on_restart")]
+        public bool ValidateOnRestart { get; set; }
+
+        [JsonProperty("health_check_enabled")]
+        public bool HealthCheckEnabled { get; set; }
+
+        [JsonProperty("health_check_failure_threshold")]
+        public int HealthCheckFailureThreshold { get; set; } = 10;
+
+        [JsonProperty("health_check_interval_seconds")]
+        public int HealthCheckIntervalSeconds { get; set; } = 7;
     }
 }

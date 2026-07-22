@@ -30,15 +30,14 @@ namespace SteamServerBuddy.Services
     {
         private const string BACKUP_DIR_NAME = "Backups";
 
-        public async Task CreateBackupAsync(string serverName, string installPath)
+        public async Task CreateBackupAsync(string serverName, string installPath, string backupLocation = "")
         {
             if (string.IsNullOrWhiteSpace(installPath) || !Directory.Exists(installPath))
             {
                 throw new DirectoryNotFoundException($"Server install path not found: {installPath}");
             }
 
-            // Create Backups directory inside the install path
-            var backupDir = Path.Combine(installPath, BACKUP_DIR_NAME);
+            var backupDir = GetBackupDirectory(installPath, backupLocation);
             if (!Directory.Exists(backupDir))
             {
                 Directory.CreateDirectory(backupDir);
@@ -63,8 +62,8 @@ namespace SteamServerBuddy.Services
                     var rootDir = new DirectoryInfo(installPath);
                     foreach (var file in rootDir.GetFiles("*", SearchOption.AllDirectories))
                     {
-                        // Exclude the Backups folder content
-                        if (file.FullName.Contains(Path.Combine(installPath, BACKUP_DIR_NAME))) continue;
+                        // Exclude the selected backup folder if it lives inside the server tree.
+                        if (file.FullName.StartsWith(backupDir + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) continue;
                         if (file.Extension.Equals(".tmp", StringComparison.OrdinalIgnoreCase)) continue;
                         
                         // Exclude lock files or logs if needed? For now keep logs.
@@ -83,23 +82,35 @@ namespace SteamServerBuddy.Services
             });
         }
 
-        public async Task PruneBackupsAsync(string installPath, int keepCount)
+        public async Task PruneBackupsAsync(string installPath, int keepCount, string backupLocation = "")
         {
             if (keepCount <= 0) return;
 
-            var backups = await GetBackupsAsync(installPath);
+            var backups = await GetBackupsAsync(installPath, backupLocation);
             foreach (var backup in backups.Skip(keepCount))
             {
                 await DeleteBackupAsync(backup.FullPath);
             }
         }
 
-        public async Task<List<BackupInfo>> GetBackupsAsync(string installPath)
+        public async Task PruneBackupsOlderThanAsync(string installPath, int retentionDays, string backupLocation = "")
+        {
+            if (retentionDays <= 0) return;
+
+            var cutoff = DateTime.Now.AddDays(-retentionDays);
+            var backups = await GetBackupsAsync(installPath, backupLocation);
+            foreach (var backup in backups.Where(backup => backup.CreationTime < cutoff))
+            {
+                await DeleteBackupAsync(backup.FullPath);
+            }
+        }
+
+        public async Task<List<BackupInfo>> GetBackupsAsync(string installPath, string backupLocation = "")
         {
             return await Task.Run(() =>
             {
                 var backups = new List<BackupInfo>();
-                var backupDir = Path.Combine(installPath, BACKUP_DIR_NAME);
+                var backupDir = GetBackupDirectory(installPath, backupLocation);
 
                 if (Directory.Exists(backupDir))
                 {
@@ -117,6 +128,13 @@ namespace SteamServerBuddy.Services
                 }
                 return backups;
             });
+        }
+
+        public string GetBackupDirectory(string installPath, string backupLocation = "")
+        {
+            return string.IsNullOrWhiteSpace(backupLocation)
+                ? Path.Combine(installPath, BACKUP_DIR_NAME)
+                : Path.GetFullPath(Environment.ExpandEnvironmentVariables(backupLocation));
         }
 
         public async Task DeleteBackupAsync(string backupPath)
