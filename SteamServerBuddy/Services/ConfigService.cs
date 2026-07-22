@@ -16,7 +16,9 @@ namespace SteamServerBuddy.Services
         private static readonly Dictionary<string, string> SchemaAliases = new(StringComparer.OrdinalIgnoreCase)
         {
             // Palworld game app -> Palworld Dedicated Server app/config schema.
-            ["1623730"] = "2394010"
+            ["1623730"] = "2394010",
+            // V Rising Dedicated Server uses 1829350, while its game/settings identity is 1604030.
+            ["1829350"] = "1604030"
         };
 
         private static readonly Dictionary<string, List<OptionDefinition>> NativeEnumRegistry = new(StringComparer.OrdinalIgnoreCase)
@@ -612,6 +614,7 @@ namespace SteamServerBuddy.Services
                 "1203620" => 15636, // Enshrouded
                 "892970" => 2456,   // Valheim
                 "1604030" => 9876,  // V Rising
+                "1829350" => 9876,  // V Rising Dedicated Server
                 "4019830" => 7777,  // RuneScape Dragonwilds: Dedicated Server
                 "1374490" => 7777,  // RuneScape Dragonwilds
                 _ => null

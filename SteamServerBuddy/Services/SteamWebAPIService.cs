@@ -69,6 +69,26 @@ namespace SteamServerBuddy.Services
                     var customServers = JsonConvert.DeserializeObject<List<ServerInfo>>(json);
                     if (customServers != null)
                     {
+                        var repairedImportedServer = false;
+                        foreach (var server in customServers)
+                        {
+                            if (server.AppId.StartsWith("custom-", StringComparison.OrdinalIgnoreCase) &&
+                                DetectInstalledServerAppId(server.InstallPath) is { } detectedAppId)
+                            {
+                                server.AppId = detectedAppId;
+                                var metadata = await GetAppMetadataAsync(detectedAppId);
+                                ApplyMetadata(server, metadata);
+                                repairedImportedServer = true;
+                            }
+                        }
+
+                        if (repairedImportedServer)
+                        {
+                            await File.WriteAllTextAsync(
+                                CustomServersPath,
+                                JsonConvert.SerializeObject(customServers, Formatting.Indented));
+                        }
+
                         results.AddRange(customServers);
                     }
                 }
@@ -185,6 +205,9 @@ namespace SteamServerBuddy.Services
                 AppId = appId,
                 Name = name,
                 InstallPath = installPath,
+                LaunchArguments = appId == "1829350"
+                    ? "-persistentDataPath .\\save-data -logFile .\\logs\\VRisingServer.log"
+                    : "",
                 IsInstalled = true
             };
 
@@ -258,6 +281,29 @@ namespace SteamServerBuddy.Services
                 Globals.Diagnostics.Error($"Steam metadata lookup failed for {appId}", ex);
                 return BuildFallbackMetadata(appId);
             }
+        }
+
+        public static string? DetectInstalledServerAppId(string installPath)
+        {
+            if (string.IsNullOrWhiteSpace(installPath) || !Directory.Exists(installPath)) return null;
+
+            // Palworld dedicated server installations contain PalServer.exe at the
+            // root and the Pal\Binaries\Win64 server executable below it.
+            if (File.Exists(Path.Combine(installPath, "PalServer.exe")) ||
+                File.Exists(Path.Combine(installPath, "Pal", "Binaries", "Win64", "PalServer-Win64-Test-Cmd.exe")) ||
+                File.Exists(Path.Combine(installPath, "Pal", "Saved", "Config", "WindowsServer", "PalWorldSettings.ini")))
+            {
+                return "2394010";
+            }
+
+            var steamAppIdPath = Path.Combine(installPath, "steam_appid.txt");
+            if (File.Exists(steamAppIdPath))
+            {
+                var value = File.ReadAllText(steamAppIdPath).Trim();
+                if (value == "2394010") return value;
+            }
+
+            return null;
         }
 
         public async Task<List<SteamDedicatedServerCatalogItem>> FetchDedicatedServerCatalogAsync()

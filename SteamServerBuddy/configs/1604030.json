@@ -1,6 +1,13 @@
 {
     "appid": "1604030",
     "name": "V Rising Dedicated Server",
+    "executables": [
+        "VRisingServer.exe"
+    ],
+    "launch_args": [
+        "-persistentDataPath .\\save-data",
+        "-logFile .\\logs\\VRisingServer.log"
+    ],
     "config_files": [
         {
             "name": "ServerGameSettings.json",
@@ -16,18 +23,18 @@
                     "options": [
                         {
                             "label": "Relaxed",
-                            "value": 0
+                            "value": "Relaxed"
                         },
                         {
                             "label": "Normal",
-                            "value": 1
+                            "value": "Normal"
                         },
                         {
                             "label": "Brutal",
-                            "value": 2
+                            "value": "Brutal"
                         }
                     ],
-                    "default": 1
+                    "default": "Normal"
                 },
                 {
                     "key": "GameModeType",
@@ -37,14 +44,14 @@
                     "options": [
                         {
                             "label": "PvE",
-                            "value": 0
+                            "value": "PvE"
                         },
                         {
                             "label": "PvP",
-                            "value": 1
+                            "value": "PvP"
                         }
                     ],
-                    "default": 0
+                    "default": "PvP"
                 },
                 {
                     "key": "CastleDamageMode",
@@ -54,18 +61,18 @@
                     "options": [
                         {
                             "label": "Never",
-                            "value": 0
+                            "value": "Never"
                         },
                         {
                             "label": "Always",
-                            "value": 1
+                            "value": "Always"
                         },
                         {
                             "label": "Time Restricted",
-                            "value": 2
+                            "value": "TimeRestricted"
                         }
                     ],
-                    "default": 0
+                    "default": "Never"
                 },
                 {
                     "key": "PlayerDamageMode",
@@ -75,14 +82,14 @@
                     "options": [
                         {
                             "label": "Always",
-                            "value": 0
+                            "value": "Always"
                         },
                         {
                             "label": "Time Restricted",
-                            "value": 1
+                            "value": "TimeRestricted"
                         }
                     ],
-                    "default": 0
+                    "default": "Always"
                 },
                 {
                     "key": "SiegeWeaponHealth",
@@ -92,42 +99,42 @@
                     "options": [
                         {
                             "label": "Very Low",
-                            "value": 0
+                            "value": "VeryLow"
                         },
                         {
                             "label": "Low",
-                            "value": 1
+                            "value": "Low"
                         },
                         {
                             "label": "Normal",
-                            "value": 2
+                            "value": "Normal"
                         },
                         {
                             "label": "High",
-                            "value": 3
+                            "value": "High"
                         },
                         {
                             "label": "Very High",
-                            "value": 4
+                            "value": "VeryHigh"
                         },
                         {
                             "label": "Mega High",
-                            "value": 5
+                            "value": "MegaHigh"
                         },
                         {
                             "label": "Ultra High",
-                            "value": 6
+                            "value": "UltraHigh"
                         },
                         {
                             "label": "Crazy High",
-                            "value": 7
+                            "value": "CrazyHigh"
                         },
                         {
                             "label": "Max",
-                            "value": 8
+                            "value": "Max"
                         }
                     ],
-                    "default": 2
+                    "default": "Normal"
                 },
                 {
                     "key": "CastleHeartDamageMode",
@@ -258,7 +265,7 @@
                     "default": 0
                 },
                 {
-                    "key": "StartedResourceID",
+                    "key": "StarterResourcesId",
                     "label": "Starter Resources",
                     "type": "select",
                     "description": "Select starter resource set for new players.",
@@ -469,6 +476,92 @@
                     "default": false
                 },
                 {
+                    "key": "BatBoundItems",
+                    "label": "Restrict Bat Form Items",
+                    "type": "toggle",
+                    "description": "Prevent bat form while carrying bound items.",
+                    "default": false
+                },
+                {
+                    "key": "BatBoundShards",
+                    "label": "Restrict Bat Form Shards",
+                    "type": "toggle",
+                    "description": "Prevent bat form while carrying Soul Shards.",
+                    "default": false
+                },
+                {
+                    "key": "FreeCastleRaid",
+                    "label": "Free Castle Raiding",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
+                    "key": "FreeCastleClaim",
+                    "label": "Free Castle Claiming",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
+                    "key": "FreeCastleDestroy",
+                    "label": "Free Castle Destruction",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
+                    "key": "StartingProgressionLevel",
+                    "label": "Starting Progression Level",
+                    "type": "number",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "default": 0
+                },
+                {
+                    "key": "ResearchCostModifier",
+                    "label": "Research Cost",
+                    "type": "number",
+                    "min": 0,
+                    "max": 10,
+                    "step": 0.1,
+                    "default": 1
+                },
+                {
+                    "key": "RefinementCostModifier",
+                    "label": "Refinement Cost",
+                    "type": "number",
+                    "min": 0,
+                    "max": 10,
+                    "step": 0.1,
+                    "default": 1
+                },
+                {
+                    "key": "ResearchTimeModifier",
+                    "label": "Research Time",
+                    "type": "number",
+                    "min": 0.1,
+                    "max": 10,
+                    "step": 0.1,
+                    "default": 1
+                },
+                {
+                    "key": "DismantleResourceModifier",
+                    "label": "Dismantle Resource Return",
+                    "type": "number",
+                    "min": 0,
+                    "max": 10,
+                    "step": 0.1,
+                    "default": 1
+                },
+                {
+                    "key": "ServantConvertRateModifier",
+                    "label": "Servant Conversion Speed",
+                    "type": "number",
+                    "min": 0.1,
+                    "max": 10,
+                    "step": 0.1,
+                    "default": 1
+                },
+                {
                     "key": "GameTimeModifiers.DayDurationInSeconds",
                     "label": "Day Cycle (Sec)",
                     "type": "number",
@@ -649,7 +742,7 @@
                     "default": 600
                 },
                 {
-                    "key": "TimeZone",
+                    "key": "PlayerInteractionSettings.TimeZone",
                     "label": "Time Zone",
                     "type": "select",
                     "description": "Set the server's time zone.",
@@ -678,7 +771,7 @@
                     "default": "Local"
                 },
                 {
-                    "key": "CastleHeartLimitType",
+                    "key": "CastleStatModifiers_Global.CastleHeartLimitType",
                     "label": "Castle Heart Limit Type",
                     "type": "select",
                     "description": "Define who controls the castle heart limit (user or clan).",
@@ -724,13 +817,45 @@
                     "default": 9876
                 },
                 {
+                    "key": "QueryPort",
+                    "label": "Query Port",
+                    "type": "number",
+                    "description": "UDP port used by Steam and EOS server discovery. Forward this port together with the game port.",
+                    "min": 1,
+                    "max": 65535,
+                    "step": 1,
+                    "default": 9877
+                },
+                {
+                    "key": "Address",
+                    "label": "Bind Address",
+                    "type": "text",
+                    "description": "Optional local IP address to bind. Leave empty to listen on all interfaces.",
+                    "default": ""
+                },
+                {
+                    "key": "HideIPAddress",
+                    "label": "Hide IP Address",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
                     "key": "MaxConnectedUsers",
                     "label": "Max Players",
                     "type": "number",
                     "min": 1,
-                    "max": 100,
+                    "max": 128,
                     "step": 1,
                     "default": 40
+                },
+                {
+                    "key": "MaxConnectedAdmins",
+                    "label": "Reserved Admin Slots",
+                    "type": "number",
+                    "min": 0,
+                    "max": 128,
+                    "step": 1,
+                    "default": 4
                 },
                 {
                     "key": "Password",
@@ -745,10 +870,178 @@
                     "default": true
                 },
                 {
-                    "key": "ListOnMasterServer",
-                    "label": "List Publicly",
+                    "key": "ListOnSteam",
+                    "label": "List on Steam",
+                    "type": "toggle",
+                    "description": "Publish the server to the Steam server browser.",
+                    "default": false
+                },
+                {
+                    "key": "ListOnEOS",
+                    "label": "List on EOS",
+                    "type": "toggle",
+                    "description": "Publish the server to Epic Online Services for cross-platform discovery.",
+                    "default": false
+                },
+                {
+                    "key": "LanMode",
+                    "label": "LAN Mode",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
+                    "key": "ServerFps",
+                    "label": "Server FPS",
+                    "type": "number",
+                    "min": 10,
+                    "max": 60,
+                    "step": 1,
+                    "default": 30
+                },
+                {
+                    "key": "LowerFPSWhenEmpty",
+                    "label": "Lower FPS When Empty",
                     "type": "toggle",
                     "default": true
+                },
+                {
+                    "key": "LowerFPSWhenEmptyValue",
+                    "label": "Empty Server FPS",
+                    "type": "number",
+                    "min": 1,
+                    "max": 30,
+                    "step": 1,
+                    "default": 1
+                },
+                {
+                    "key": "GameSettingsPreset",
+                    "label": "Game Settings Preset",
+                    "type": "text",
+                    "description": "Optional built-in game settings preset. Leave empty to use ServerGameSettings.json.",
+                    "default": ""
+                },
+                {
+                    "key": "GameDifficultyPreset",
+                    "label": "Difficulty Preset",
+                    "type": "text",
+                    "description": "Optional built-in difficulty preset. Leave empty for custom settings.",
+                    "default": ""
+                },
+                {
+                    "key": "SaveName",
+                    "label": "Save Name",
+                    "type": "text",
+                    "default": "world1"
+                },
+                {
+                    "key": "AutoSaveCount",
+                    "label": "Auto Saves Kept",
+                    "type": "number",
+                    "min": 1,
+                    "max": 100,
+                    "step": 1,
+                    "default": 20
+                },
+                {
+                    "key": "AutoSaveInterval",
+                    "label": "Auto Save Interval (seconds)",
+                    "type": "number",
+                    "min": 30,
+                    "max": 3600,
+                    "step": 30,
+                    "default": 120
+                },
+                {
+                    "key": "AutoSaveSmartKeep",
+                    "label": "Smart Save Retention",
+                    "type": "toggle",
+                    "default": true
+                },
+                {
+                    "key": "CompressSaveFiles",
+                    "label": "Compress Save Files",
+                    "type": "toggle",
+                    "default": true
+                },
+                {
+                    "key": "ResetDaysInterval",
+                    "label": "Reset Interval (days)",
+                    "type": "number",
+                    "min": 0,
+                    "max": 365,
+                    "step": 1,
+                    "default": 0
+                },
+                {
+                    "key": "DayOfReset",
+                    "label": "Reset Day",
+                    "type": "text",
+                    "description": "Optional reset day used with a reset interval.",
+                    "default": "Any"
+                },
+                {
+                    "key": "SafeReconnectTime",
+                    "label": "Safe Reconnect Time",
+                    "type": "number",
+                    "min": 0,
+                    "max": 600,
+                    "step": 1,
+                    "default": 60
+                },
+                {
+                    "key": "SafeReconnectSlots",
+                    "label": "Safe Reconnect Slots",
+                    "type": "number",
+                    "min": 0,
+                    "max": 128,
+                    "step": 1,
+                    "default": 5
+                },
+                {
+                    "key": "AdminOnlyDebugEvents",
+                    "label": "Admin-only Debug Events",
+                    "type": "toggle",
+                    "default": true
+                },
+                {
+                    "key": "DisableDebugEvents",
+                    "label": "Disable Debug Events",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
+                    "key": "API.Enabled",
+                    "label": "Enable Server API",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
+                    "key": "Rcon.Enabled",
+                    "label": "Enable RCON",
+                    "type": "toggle",
+                    "default": false
+                },
+                {
+                    "key": "Rcon.Port",
+                    "label": "RCON Port (TCP)",
+                    "type": "number",
+                    "min": 1,
+                    "max": 65535,
+                    "step": 1,
+                    "default": 25575
+                },
+                {
+                    "key": "Rcon.Password",
+                    "label": "RCON Password",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "Rcon.BindAddress",
+                    "label": "RCON Bind Address",
+                    "type": "text",
+                    "description": "Leave empty to use the server default.",
+                    "default": ""
                 }
             ]
         }

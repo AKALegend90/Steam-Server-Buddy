@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SteamServerBuddy.Services;
 using System.IO;
 
 
@@ -19,11 +20,28 @@ namespace SteamServerBuddy.ViewModels
         public ConsoleViewModel ConsoleVM { get; } = new ConsoleViewModel();
         public ServerDetailViewModel ServerDetailVM { get; } = new ServerDetailViewModel();
         public DashboardViewModel DashboardVM { get; }
+        public string QuickThemeButtonText => SettingsVM.Theme == AppThemeService.LightTheme
+            ? "☾  Switch to Dark"
+            : "☀  Switch to Light";
 
         public MainViewModel()
         {
             DashboardVM = new DashboardViewModel(ServersVM);
             CurrentView = DashboardVM;
+            SettingsVM.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(SettingsVM.Theme))
+                    OnPropertyChanged(nameof(QuickThemeButtonText));
+            };
+        }
+
+        [RelayCommand]
+        public void ToggleTheme()
+        {
+            SettingsVM.Theme = SettingsVM.Theme == AppThemeService.LightTheme
+                ? AppThemeService.DarkTheme
+                : AppThemeService.LightTheme;
+            OnPropertyChanged(nameof(QuickThemeButtonText));
         }
 
         [RelayCommand]

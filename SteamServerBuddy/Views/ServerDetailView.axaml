@@ -13,108 +13,146 @@
                     <TextBlock Text="{Binding AppId, StringFormat='App ID: {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}"/>
                     <TextBlock Text="{Binding InstallPath}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
-                <Button Grid.Column="2"
-                        Content="{Binding StartStopButtonContent}"
-                        Command="{Binding StartStopServerCommand}"
-                        Background="{Binding StartStopButtonBackground}"
-                        Padding="20,10"
-                        VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Content="Server Settings"
+                            Command="{Binding ShowServerSettingsCommand}"
+                            Padding="16,10"/>
+                </StackPanel>
             </Grid>
 
-            <TextBlock Text="{Binding DetailStatus}" Foreground="{DynamicResource AppInfoTextBrush}" FontSize="13" TextWrapping="Wrap"/>
-
-            <Border Padding="14" CornerRadius="6" Background="{DynamicResource AppPanelAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" MaxHeight="220">
-                <Grid RowDefinitions="Auto,*">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Text="Live Console" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
-                        <Button Grid.Column="1" Content="Clear" Command="{Binding ConsoleVM.ClearCommand}" Padding="10,6"/>
+            <StackPanel IsVisible="{Binding ShowDashboardContent}" Spacing="14">
+                <Border Padding="12" CornerRadius="6" Background="{DynamicResource AppPanelAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                    <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+                        <Button Content="Start / Stop" Command="{Binding StartStopServerCommand}" Background="{Binding StartStopButtonBackground}" Padding="18,9"/>
+                        <Button Grid.Column="1" Content="Restart" Command="{Binding RestartServerCommand}" Padding="14,9"/>
+                        <Button Grid.Column="2" Content="Update / Validate" Command="{Binding UpdateServerCommand}" Padding="14,9"/>
+                        <Button Grid.Column="3" Content="Open Folder" Command="{Binding OpenServerFolderCommand}" Padding="14,9"/>
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="18" VerticalAlignment="Center" Margin="10,0">
+                            <TextBlock Text="{Binding IsRunning, StringFormat='Running: {0}'}" Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock Text="{Binding ServerPort, StringFormat='Port: {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                            <TextBlock Text="{Binding UptimeDisplay, StringFormat='Uptime: {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}"/>
+                        </StackPanel>
+                        <Button Grid.Column="5" Content="Remove Files" Command="{Binding UninstallServerCommand}" Padding="14,9"/>
                     </Grid>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,8,0,0">
-                        <TextBox Text="{Binding ConsoleVM.LogContent}"
-                                 AcceptsReturn="True"
-                                 IsReadOnly="True"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 Background="Transparent"
-                                 Foreground="{DynamicResource AppConsoleTextBrush}"
-                                 BorderThickness="0"
-                                 TextWrapping="NoWrap"/>
-                    </ScrollViewer>
+                </Border>
+
+                <TextBlock Text="{Binding DetailStatus}" Foreground="{DynamicResource AppInfoTextBrush}" FontSize="13" TextWrapping="Wrap"/>
+
+                <UniformGrid Columns="3">
+                    <Border Margin="0,0,10,0" Padding="14" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Restarts" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                            <Grid ColumnDefinitions="*,140" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                                <CheckBox Content="Scheduled restart at" IsChecked="{Binding ScheduledRestartEnabled}"/>
+                                <TextBox Grid.Column="1" Text="{Binding ScheduledRestartTime}" Watermark="3:00 AM"/>
+                                <TextBlock Grid.Row="1" Text="Minimum uptime (hours)" Foreground="{DynamicResource AppSubtleTextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding RestartMinimumUptimeHours}" Minimum="0" Maximum="720"/>
+                                <CheckBox Grid.Row="2" Content="Announce restarts" IsChecked="{Binding AnnounceRestarts}"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding RestartAnnouncementMinutes}" Watermark="15,5,1"/>
+                                <CheckBox Grid.Row="3" Grid.ColumnSpan="2" Content="Validate files on restart" IsChecked="{Binding ValidateOnRestart}"/>
+                                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="{Binding NextRestartDisplay, StringFormat='Next restart: {0}'}" Foreground="{DynamicResource AppMutedTextBrush}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0,0,10,0" Padding="14" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Backups" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="Backup on:" Foreground="{DynamicResource AppSubtleTextBrush}" VerticalAlignment="Center"/>
+                                <CheckBox Content="Startup" IsChecked="{Binding BackupOnStartup}"/>
+                                <CheckBox Content="Shutdown" IsChecked="{Binding BackupOnShutdown}"/>
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,130" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <CheckBox Content="Scheduled backups" IsChecked="{Binding AutoBackupEnabled}"/>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding BackupSchedules}" SelectedItem="{Binding BackupSchedule}"/>
+                                <TextBlock Grid.Row="1" Text="Keep backups for (days)" Foreground="{DynamicResource AppSubtleTextBrush}" VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BackupRetentionDays}" Minimum="1" Maximum="3650"/>
+                                <TextBox Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding BackupLocation}" Watermark="Default backup location"/>
+                                <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Backup Now" Command="{Binding CreateBackupCommand}" Padding="12,7"/>
+                                    <Button Content="Open Location" Command="{Binding OpenBackupLocationCommand}" Padding="12,7"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="14" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Misc." FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                            <CheckBox Content="Pin current server version" IsChecked="{Binding PinServerVersion}"/>
+                            <CheckBox Content="Automatic updates" IsChecked="{Binding AutoUpdateEnabled}"/>
+                            <CheckBox Content="Update on start / restart" IsChecked="{Binding UpdateOnStartRestart}"/>
+                            <Grid ColumnDefinitions="*,110" RowDefinitions="Auto,Auto,Auto">
+                                <TextBlock Text="Update check interval (min)" Foreground="{DynamicResource AppSubtleTextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding AutoUpdateCheckIntervalMinutes}" Minimum="5" Maximum="1440"/>
+                                <CheckBox Grid.Row="1" Content="Health check failures" IsChecked="{Binding HealthCheckEnabled}"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding HealthCheckFailureThreshold}" Minimum="1" Maximum="100"/>
+                                <TextBlock Grid.Row="2" Text="Health check interval (sec)" Foreground="{DynamicResource AppSubtleTextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding HealthCheckIntervalSeconds}" Minimum="5" Maximum="300"/>
+                            </Grid>
+                            <CheckBox Content="Auto restart after crash" IsChecked="{Binding AutoRestart}"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Text="{Binding LaunchArguments}" Watermark="Launch arguments, for example -batchmode -nographics"/>
+                    <Button Grid.Column="1" Content="Save Automation" Command="{Binding SaveAutomationSettingsCommand}" Padding="16,9"/>
                 </Grid>
-            </Border>
 
-            <UniformGrid Columns="3">
-                <Border Margin="0,0,10,10" Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="Runtime" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
-                        <TextBlock Text="{Binding CpuUsage, StringFormat='CPU: {0}'}" Foreground="{DynamicResource AppTextBrush}"/>
-                        <TextBlock Text="{Binding MemoryUsage, StringFormat='Memory: {0}'}" Foreground="{DynamicResource AppTextBrush}"/>
-                        <TextBlock Text="{Binding ServerPort, StringFormat='Server port: {0}'}" Foreground="{DynamicResource AppTextBrush}"/>
-                        <TextBlock Text="{Binding IsInstalled, StringFormat='Installed: {0}'}" Foreground="{DynamicResource AppSubtleTextBrush}"/>
-                    </StackPanel>
+                <Border Padding="0" CornerRadius="6" Background="{DynamicResource AppPanelAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" MinHeight="300">
+                    <TabControl>
+                        <TabItem Header="General">
+                            <TextBox Text="{Binding GeneralLog}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" FontSize="12" Background="Transparent" BorderThickness="0" TextWrapping="NoWrap" Margin="10"/>
+                        </TabItem>
+                        <TabItem Header="Server Log">
+                            <Grid RowDefinitions="Auto,*" Margin="10">
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBlock Text="{Binding ServerLogPath}" Foreground="{DynamicResource AppMutedTextBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshServerLogCommand}" Margin="8,0" Padding="10,6"/>
+                                    <Button Grid.Column="2" Content="Clear" Command="{Binding ConsoleVM.ClearCommand}" Padding="10,6"/>
+                                </Grid>
+                                <TextBox Grid.Row="1" Text="{Binding ConsoleVM.LogContent}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" FontSize="12" Background="Transparent" BorderThickness="0" TextWrapping="NoWrap" Margin="0,8,0,0"/>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Chat">
+                            <StackPanel Margin="16" Spacing="12">
+                                <TextBlock Text="{Binding ChatStatus}" Foreground="{DynamicResource AppSubtleTextBrush}" TextWrapping="Wrap"/>
+                                <Button Content="Refresh Chat" Command="{Binding RefreshChatCommand}" HorizontalAlignment="Left" Padding="12,7"/>
+                            </StackPanel>
+                        </TabItem>
+                        <TabItem Header="Players">
+                            <StackPanel Margin="16" Spacing="12">
+                                <TextBlock Text="{Binding PlayersStatus}" Foreground="{DynamicResource AppSubtleTextBrush}" TextWrapping="Wrap"/>
+                                <Button Content="Refresh Players" Command="{Binding RefreshPlayersCommand}" HorizontalAlignment="Left" Padding="12,7"/>
+                            </StackPanel>
+                        </TabItem>
+                        <TabItem Header="SteamCMD">
+                            <Grid RowDefinitions="Auto,*" Margin="10">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Update / Validate" Command="{Binding UpdateServerCommand}" Padding="12,7"/>
+                                    <Button Content="Clear" Command="{Binding ClearSteamCmdLogCommand}" Padding="12,7"/>
+                                    <ProgressBar Value="{Binding InstallProgress}" Maximum="100" Width="180" Height="8" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding InstallStatus}" Foreground="{DynamicResource AppSubtleTextBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBox Grid.Row="1" Text="{Binding SteamCmdLog}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" FontSize="12" Background="Transparent" BorderThickness="0" TextWrapping="NoWrap" Margin="0,8,0,0"/>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
                 </Border>
 
-                <Border Margin="0,0,10,10" Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Maintenance" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
-                        <Button Content="Open Folder" Command="{Binding OpenServerFolderCommand}" Padding="12,7"/>
-                        <Button Content="Update / Validate" Command="{Binding UpdateServerCommand}" Padding="12,7"/>
-                        <Button Content="Remove Server Files" Command="{Binding UninstallServerCommand}" Padding="12,7"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Margin="0,0,0,10" Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Install Progress" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
-                        <ProgressBar Value="{Binding InstallProgress}" Maximum="100" Height="8"/>
-                        <TextBlock Text="{Binding InstallStatus}" Foreground="{DynamicResource AppSubtleTextBrush}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
-
-            <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
-                <StackPanel Spacing="14">
-                    <TextBlock Text="Automation" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
-                    <UniformGrid Columns="2">
-                        <CheckBox Content="Auto restart after crash" IsChecked="{Binding AutoRestart}" Margin="0,0,12,8"/>
-                        <CheckBox Content="Auto update" IsChecked="{Binding AutoUpdateEnabled}" Margin="0,0,12,8"/>
-                        <CheckBox Content="Auto backup" IsChecked="{Binding AutoBackupEnabled}" Margin="0,0,12,8"/>
-                        <CheckBox Content="Scheduled restart" IsChecked="{Binding ScheduledRestartEnabled}" Margin="0,0,12,8"/>
-                    </UniformGrid>
-
-                    <Grid ColumnDefinitions="*,Auto,*,*,*" RowDefinitions="Auto,Auto">
-                        <TextBlock Text="Port" Foreground="{DynamicResource AppSubtleTextBrush}"/>
-                        <TextBlock Grid.Column="2" Text="Update time" Foreground="{DynamicResource AppSubtleTextBrush}"/>
-                        <TextBlock Grid.Column="3" Text="Backup interval hours" Foreground="{DynamicResource AppSubtleTextBrush}"/>
-                        <TextBlock Grid.Column="4" Text="Restart interval hours" Foreground="{DynamicResource AppSubtleTextBrush}"/>
-
-                        <NumericUpDown Grid.Row="1" Value="{Binding ServerPort}" Minimum="0" Maximum="65535" Margin="0,6,12,0"/>
-                        <Button Grid.Row="1"
-                                Grid.Column="1"
-                                Content="Detect Port"
-                                Command="{Binding DetectServerPortCommand}"
-                                Padding="12,7"
-                                Margin="0,6,12,0"/>
-                        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding AutoUpdateSchedule}" Margin="0,6,12,0"/>
-                        <NumericUpDown Grid.Row="1" Grid.Column="3" Value="{Binding AutoBackupInterval}" Minimum="1" Maximum="720" Margin="0,6,12,0"/>
-                        <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding ScheduledRestartInterval}" Minimum="1" Maximum="720" Margin="0,6,0,0"/>
-                    </Grid>
-
-                    <TextBlock Text="Forward this port manually in your router and Windows Firewall if friends outside your network need to connect." Foreground="{DynamicResource AppSubtleTextBrush}" TextWrapping="Wrap"/>
-
-                    <TextBlock Text="Launch arguments" Foreground="{DynamicResource AppSubtleTextBrush}"/>
-                    <TextBox Text="{Binding LaunchArguments}" Watermark="-batchmode -nographics or game-specific flags"/>
-
-                    <Button Content="Save Automation Settings"
-                            Command="{Binding SaveAutomationSettingsCommand}"
-                            Padding="16,9"
-                            HorizontalAlignment="Left"/>
+                <StackPanel Orientation="Horizontal" Spacing="18">
+                    <TextBlock Text="{Binding CpuUsage, StringFormat='CPU {0}'}" Foreground="{DynamicResource AppMutedTextBrush}"/>
+                    <TextBlock Text="{Binding MemoryUsage, StringFormat='Memory {0}'}" Foreground="{DynamicResource AppMutedTextBrush}"/>
+                    <TextBlock Text="{Binding UptimeDisplay, StringFormat='Uptime {0}'}" Foreground="{DynamicResource AppMutedTextBrush}"/>
+                    <TextBlock Text="{Binding NextRestartDisplay, StringFormat='Next restart {0}'}" Foreground="{DynamicResource AppMutedTextBrush}"/>
                 </StackPanel>
-            </Border>
+            </StackPanel>
 
-            <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+            <Border Padding="0" Background="Transparent" BorderThickness="0" IsVisible="{Binding ShowSettingsContent}">
                 <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto,Auto">
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                         <StackPanel>
                             <TextBlock Text="Server Settings Files" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
                             <TextBlock Text="{Binding SettingsVM.StatusMessage}" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="12"/>
@@ -128,12 +166,17 @@
                                 Content="Save Settings"
                                 Command="{Binding SettingsVM.SaveCommand}"
                                 Padding="12,7"/>
+                        <Button Grid.Column="3"
+                                Content="Back to Server"
+                                Command="{Binding ShowServerDashboardCommand}"
+                                Padding="12,7"
+                                Margin="8,0,0,0"/>
                     </Grid>
 
                     <ItemsControl ItemsSource="{Binding SettingsVM.Groups}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="12" CornerRadius="4" Background="{DynamicResource AppCardAltBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" Margin="0,0,0,10">
+                                <Border Padding="0" Background="Transparent" BorderThickness="0" Margin="0,0,0,10">
                                     <StackPanel Spacing="10">
                                         <Grid ColumnDefinitions="*,Auto,Auto">
                                             <StackPanel>
@@ -154,14 +197,92 @@
                                                     Margin="8,0,0,0"/>
                                         </Grid>
 
-                                        <ItemsControl ItemsSource="{Binding Fields}">
+                                        <TabControl ItemsSource="{Binding Categories}" IsVisible="{Binding IsCategorized}">
+                                            <TabControl.ItemTemplate>
+                                                <DataTemplate><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="10,6"/></DataTemplate>
+                                            </TabControl.ItemTemplate>
+                                            <TabControl.ContentTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,12,0,4" Spacing="14">
+                                                        <ItemsControl ItemsSource="{Binding Fields}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border Padding="0,8" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,0,0,1">
+                                                                        <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto">
+                                                                            <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
+                                                                                <TextBlock Text="{Binding Label}" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                                                <TextBlock Text="{Binding Key}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="10" TextWrapping="Wrap"/>
+                                                                            </StackPanel>
+                                                                            <Grid Grid.Column="1" ColumnDefinitions="130,*" IsVisible="{Binding IsSliderNumber}">
+                                                                                <TextBox Text="{Binding Value}" Watermark="Value" MinWidth="120" Padding="12,8" Margin="0,0,16,0" VerticalContentAlignment="Center"/>
+                                                                                <Slider Grid.Column="1" Value="{Binding SliderValue}" Minimum="{Binding Min}" Maximum="{Binding Max}" TickFrequency="{Binding Step}" VerticalAlignment="Center"/>
+                                                                            </Grid>
+                                                                            <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value" IsVisible="{Binding IsTextInput}"/>
+                                                                            <ComboBox Grid.Column="1" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption}" IsVisible="{Binding IsSelectInput}">
+                                                                                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}"/></DataTemplate></ComboBox.ItemTemplate>
+                                                                            </ComboBox>
+                                                                            <CheckBox Grid.Column="1" IsChecked="{Binding Value}" Content="Enabled" IsVisible="{Binding IsToggleInput}"/>
+                                                                            <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value" IsVisible="{Binding IsFallbackInput}"/>
+                                                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Description}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+
+                                                        <ItemsControl ItemsSource="{Binding Toggles}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border Padding="14" Margin="0,0,12,12" CornerRadius="5"
+                                                                            Background="{DynamicResource AppCardAltBrush}"
+                                                                            BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+                                                                        <Grid ColumnDefinitions="Auto,*">
+                                                                            <CheckBox IsChecked="{Binding Value}" VerticalAlignment="Top" Margin="0,2,12,0"/>
+                                                                            <StackPanel Grid.Column="1" Spacing="3">
+                                                                                <TextBlock Text="{Binding Label}" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                                                <TextBlock Text="{Binding Key}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="10" TextWrapping="Wrap"/>
+                                                                                <TextBlock Text="{Binding Description}" Foreground="{DynamicResource AppSubtleTextBrush}" FontSize="11" TextWrapping="Wrap"/>
+                                                                            </StackPanel>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </TabControl.ContentTemplate>
+                                        </TabControl>
+
+                                        <ItemsControl ItemsSource="{Binding Fields}" IsVisible="{Binding IsStandard}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto" Margin="0,0,0,8">
-                                                        <TextBlock Text="{Binding Label}" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                        <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value"/>
-                                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Description}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="11" TextWrapping="Wrap"/>
-                                                    </Grid>
+                                                    <Border Padding="0,8" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="0,0,0,1">
+                                                        <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto">
+                                                            <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
+                                                                <TextBlock Text="{Binding Label}" Foreground="{DynamicResource AppTextBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                                <TextBlock Text="{Binding Key}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="10" TextWrapping="Wrap"/>
+                                                            </StackPanel>
+
+                                                            <Grid Grid.Column="1" ColumnDefinitions="130,*" IsVisible="{Binding IsSliderNumber}">
+                                                                <TextBox Text="{Binding Value}" Watermark="Value" MinWidth="120" Padding="12,8" Margin="0,0,16,0" VerticalContentAlignment="Center"/>
+                                                                <Slider Grid.Column="1" Value="{Binding SliderValue}" Minimum="{Binding Min}" Maximum="{Binding Max}" TickFrequency="{Binding Step}" VerticalAlignment="Center"/>
+                                                            </Grid>
+
+                                                            <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value" IsVisible="{Binding IsTextInput}"/>
+                                                            <ComboBox Grid.Column="1" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption}" IsVisible="{Binding IsSelectInput}">
+                                                                <ComboBox.ItemTemplate>
+                                                                    <DataTemplate><TextBlock Text="{Binding Label}"/></DataTemplate>
+                                                                </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                            <CheckBox Grid.Column="1" IsChecked="{Binding Value}" Content="Enabled" IsVisible="{Binding IsToggleInput}"/>
+                                                            <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value" IsVisible="{Binding IsFallbackInput}"/>
+
+                                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Description}" Foreground="{DynamicResource AppMutedTextBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                        </Grid>
+                                                    </Border>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
@@ -173,10 +294,10 @@
                 </StackPanel>
             </Border>
 
-            <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1">
+            <Border Padding="16" CornerRadius="6" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppBorderBrush}" BorderThickness="1" IsVisible="{Binding ShowDashboardContent}">
                 <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto,Auto">
-                        <TextBlock Text="Backups" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                        <TextBlock Text="Backup History" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
                         <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadBackupsCommand}" Padding="12,7" Margin="0,0,8,0"/>
                         <Button Grid.Column="2" Content="Create Backup" Command="{Binding CreateBackupCommand}" Padding="12,7"/>
                     </Grid>

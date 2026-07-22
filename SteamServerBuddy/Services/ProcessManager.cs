@@ -152,6 +152,37 @@ namespace SteamServerBuddy.Services
             return _runningServers.TryGetValue(appId, out var proc) && !proc.HasExited ? proc : null;
         }
 
+        public bool IsResponsive(string appId)
+        {
+            var process = GetProcess(appId);
+            if (process == null) return false;
+
+            try
+            {
+                process.Refresh();
+                return process.Responding;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public TimeSpan GetUptime(string appId)
+        {
+            var process = GetProcess(appId);
+            if (process == null) return TimeSpan.Zero;
+
+            try
+            {
+                return DateTime.Now - process.StartTime;
+            }
+            catch
+            {
+                return TimeSpan.Zero;
+            }
+        }
+
         private async Task HandleServerExit(string appId)
         {
             _runningServers.TryRemove(appId, out _);
@@ -164,6 +195,19 @@ namespace SteamServerBuddy.Services
 
             var server = await GetServerInfoSafe(appId);
             await NotifyDiscord(appId, "Server process exited unexpectedly.", "#FFC107", NotificationType.Crash);
+
+            if (server?.BackupOnShutdown == true && !string.IsNullOrWhiteSpace(server.InstallPath))
+            {
+                try
+                {
+                    await Globals.Backups.CreateBackupAsync(server.DisplayName, server.InstallPath, server.BackupLocation);
+                    await Globals.Backups.PruneBackupsOlderThanAsync(server.InstallPath, Math.Max(1, server.BackupRetentionDays), server.BackupLocation);
+                }
+                catch (Exception ex)
+                {
+                    Globals.Diagnostics.Error($"Crash backup failed for {server.DisplayName}", ex);
+                }
+            }
 
             if (server == null || !server.AutoRestart || string.IsNullOrEmpty(server.InstallPath)) return;
 
@@ -181,6 +225,10 @@ namespace SteamServerBuddy.Services
 
                 if (!string.IsNullOrEmpty(exePath))
                 {
+                    if (server.BackupOnStartup)
+                    {
+                        await Globals.Backups.CreateBackupAsync(server.DisplayName, server.InstallPath, server.BackupLocation);
+                    }
                     await NotifyDiscord(appId, "Server auto-restarting.", "#2196F3", NotificationType.Start);
                     StartServer(appId, exePath, server.LaunchArguments ?? "");
                 }
