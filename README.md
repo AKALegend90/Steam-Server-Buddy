@@ -2,12 +2,12 @@
 
 **Steam Server Buddy** is a Windows desktop app for installing, launching, and managing Steam dedicated servers with SteamCMD.
 
-This repository is now on **V2**. The latest release is **v2.0.3**.
+This repository is now on **V2**. The latest release is **v2.0.4**.
 
 ## Download
 
 1. Open the [Releases page](../../releases).
-2. Download the latest `SteamServerBuddy-v2.0.3-win-x64.zip`.
+2. Download the latest `SteamServerBuddy-v2.0.4-win-x64.zip`.
 3. Extract the zip.
 4. Run `SteamServerBuddy.exe`.
 
